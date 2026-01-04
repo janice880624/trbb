@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title> TRBB 查詢系統</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&display=swap');
+        
+        body {
+            font-family: 'Noto+Sans+TC', sans-serif;
+            background: linear-gradient(135deg, #1a1c2c 0%, #4a192c 100%);
+            min-height: 100vh;
+        }
+
+        .glass-morphism {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 1.5rem;
+        }
+
+        .member-card {
+            background: linear-gradient(145deg, #ffffff, #f0f0f0);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            transition: transform 0.3s ease;
+        }
+
+        .admin-row:nth-child(even) {
+            background: rgba(255, 255, 255, 0.03);
+        }
+
+        .loader {
+            border-top-color: #f43f5e;
+            animation: spinner 1.5s linear infinite;
+        }
+
+        @keyframes spinner {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* 隱藏捲軸 */
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
+</head>
+<body class="text-gray-100 p-4 md:p-8">
+
+    <div id="app" class="max-w-4xl mx-auto">
+        <!-- 登入頁面 -->
+        <div id="login-screen" class="flex flex-col items-center justify-center min-h-[80vh]">
+            <div class="mb-8 text-center">
+                <h1 class="text-4xl font-bold mb-2 tracking-widest text-transparent bg-clip-text bg-gradient-to-r from-rose-400 to-orange-300">TRBB MEMBER</h1>
+                <p class="text-gray-400">成員專屬查詢系統</p>
+            </div>
+
+            <div class="glass-morphism p-8 w-full max-w-md">
+                <div class="flex mb-6 bg-black/20 p-1 rounded-xl">
+                    <button onclick="switchLoginMode('member')" id="mode-member" class="flex-1 py-2 rounded-lg transition-all bg-rose-500 text-white font-medium">個人登入</button>
+                    <button onclick="switchLoginMode('admin')" id="mode-admin" class="flex-1 py-2 rounded-lg transition-all text-gray-400">管理員</button>
+                </div>
+
+                <!-- 個人登入表單 -->
+                <div id="form-member" class="space-y-4">
+                    <div>
+                        <label class="block text-sm text-gray-400 mb-1">編號</label>
+                        <input type="text" id="member-id" placeholder="請輸入編號 (例如: 001)" class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 focus:outline-none focus:border-rose-500 transition-colors">
+                    </div>
+                    <div>
+                        <label class="block text-sm text-gray-400 mb-1">生日</label>
+                        <input type="text" id="member-birthday" placeholder="請輸入生日 (例如: 0520)" class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 focus:outline-none focus:border-rose-500 transition-colors">
+                        <p class="text-xs text-gray-500 mt-2 italic">*格式需與資料表一致</p>
+                    </div>
+                    <button onclick="loginMember()" class="w-full bg-rose-500 hover:bg-rose-600 py-3 rounded-xl font-bold mt-4 shadow-lg shadow-rose-500/20 transition-all active:scale-95">查詢資訊卡</button>
+                </div>
+
+                <!-- 管理員登入表單 -->
+                <div id="form-admin" class="space-y-4 hidden">
+                    <div>
+                        <label class="block text-sm text-gray-400 mb-1">帳號</label>
+                        <input type="text" id="admin-user" value="admin" class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 focus:outline-none focus:border-rose-500 transition-colors">
+                    </div>
+                    <div>
+                        <label class="block text-sm text-gray-400 mb-1">密碼</label>
+                        <input type="password" id="admin-pass" placeholder="輸入管理密碼" class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 focus:outline-none focus:border-rose-500 transition-colors">
+                    </div>
+                    <button onclick="loginAdmin()" class="w-full bg-blue-500 hover:bg-blue-600 py-3 rounded-xl font-bold mt-4 shadow-lg shadow-blue-500/20 transition-all active:scale-95">管理員進入</button>
+                </div>
+            </div>
+            
+            <p id="error-msg" class="mt-4 text-rose-400 text-sm hidden"></p>
+        </div>
+
+        <!-- 個人資訊卡視圖 -->
+        <div id="member-view" class="hidden animate-in fade-in duration-500">
+            <button onclick="logout()" class="mb-6 flex items-center text-gray-400 hover:text-white transition-colors">
+                <i data-lucide="arrow-left" class="w-4 h-4 mr-1"></i> 返回登入
+            </button>
+            
+            <div id="card-container" class="flex justify-center items-center py-10">
+                <!-- 卡片內容將由 JS 動態生成 -->
+            </div>
+
+            <div class="text-center mt-8 text-gray-500 text-sm">
+                <p>Copyright © 2025 Janice. All rights reserved.</p>
+            </div>
+        </div>
+
+        <!-- 管理員後台視圖 -->
+        <div id="admin-view" class="hidden animate-in zoom-in-95 duration-300">
+            <div class="flex justify-between items-end mb-6">
+                <div>
+                    <h2 class="text-2xl font-bold">管理員控制台</h2>
+                    <p class="text-gray-400 text-sm">總成員人數: <span id="stats-total">0</span></p>
+                </div>
+                <button onclick="logout()" class="bg-white/10 px-4 py-2 rounded-lg text-sm hover:bg-white/20">登出</button>
+            </div>
+
+            <div class="glass-morphism p-6 mb-6">
+                <div class="flex flex-col md:flex-row gap-4 mb-6">
+                    <div class="relative flex-1">
+                        <i data-lucide="search" class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500"></i>
+                        <input type="text" id="admin-search" oninput="filterAdminTable()" placeholder="搜尋姓名、編號或桌號..." class="w-full bg-black/20 border border-white/10 rounded-xl pl-10 pr-4 py-2 text-sm focus:outline-none focus:border-blue-500">
+                    </div>
+                    <select id="admin-filter-group" onchange="filterAdminTable()" class="bg-black/20 border border-white/10 rounded-xl px-4 py-2 text-sm focus:outline-none">
+                        <option value="">所有組別</option>
+                        <!-- 動態填充 -->
+                    </select>
+                </div>
+
+                <div class="overflow-x-auto no-scrollbar">
+                    <table class="w-full text-left text-sm">
+                        <thead class="text-gray-400 border-b border-white/10">
+                            <tr>
+                                <th class="pb-3 font-medium">編號</th>
+                                <th class="pb-3 font-medium">姓名</th>
+                                <th class="pb-3 font-medium">生存戰組別</th>
+                                <th class="pb-3 font-medium">桌號</th>
+                                <th class="pb-3 font-medium">生日</th>
+                            </tr>
+                        </thead>
+                        <tbody id="admin-table-body" class="text-gray-200">
+                            <!-- 資料填充 -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- 全域讀取中 -->
+        <div id="loading-overlay" class="fixed inset-0 bg-black/60 backdrop-blur-sm hidden flex items-center justify-center z-50">
+            <div class="text-center">
+                <div class="loader ease-linear rounded-full border-4 border-t-4 border-gray-200 h-12 w-12 mb-4 mx-auto"></div>
+                <p class="text-white font-medium">同步雲端資料中...</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 設定與資料
+        const SHEET_ID = '1V8PfQ-K0PI3gbqq3f2wJpBa1so_HyTfn4xyoNAdh3lU';
+        const CSV_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv`;
+        
+        let allMembers = [];
+        let loginMode = 'member';
+
+        // 初始化
+        window.onload = () => {
+            lucide.createIcons();
+            fetchData();
+        };
+
+        // 讀取 Google Sheets 資料
+        async function fetchData() {
+            showLoading(true);
+            try {
+                const response = await fetch(CSV_URL);
+                const data = await response.text();
+                parseCSV(data);
+                showLoading(false);
+            } catch (error) {
+                console.error('Error fetching data:', error);
+                showError('無法從雲端讀取資料，請確認試算表權限。');
+                showLoading(false);
+            }
+        }
+
+        // 解析 CSV (手動解析以處理引號與逗號)
+        function parseCSV(csvText) {
+            const rows = csvText.split('\n');
+            const headers = rows[0].split(',').map(h => h.replace(/"/g, '').trim());
+            
+            // 欄位對應: 編號, 姓名, 生日, 生存戰組別, 桌號
+            // 注意 CSV 可能包含 BOM 或引號
+            allMembers = rows.slice(1).filter(row => row.trim() !== '').map(row => {
+                const values = row.split(',').map(v => v.replace(/"/g, '').trim());
+                return {
+                    id: values[0],
+                    name: values[1],
+                    birthday: values[2],
+                    group: values[3],
+                    table: values[4]
+                };
+            });
+            
+            updateAdminStats();
+        }
+
+        function switchLoginMode(mode) {
+            loginMode = mode;
+            const btnMember = document.getElementById('mode-member');
+            const btnAdmin = document.getElementById('mode-admin');
+            const formMember = document.getElementById('form-member');
+            const formAdmin = document.getElementById('form-admin');
+
+            if (mode === 'member') {
+                btnMember.className = 'flex-1 py-2 rounded-lg transition-all bg-rose-500 text-white font-medium';
+                btnAdmin.className = 'flex-1 py-2 rounded-lg transition-all text-gray-400';
+                formMember.classList.remove('hidden');
+                formAdmin.classList.add('hidden');
+            } else {
+                btnAdmin.className = 'flex-1 py-2 rounded-lg transition-all bg-blue-500 text-white font-medium';
+                btnMember.className = 'flex-1 py-2 rounded-lg transition-all text-gray-400';
+                formAdmin.classList.remove('hidden');
+                formMember.classList.add('hidden');
+            }
+            hideError();
+        }
+
+        function loginMember() {
+            const id = document.getElementById('member-id').value.trim();
+            const birthday = document.getElementById('member-birthday').value.trim();
+
+            if (!id || !birthday) {
+                showError('請輸入編號與生日');
+                return;
+            }
+
+            const member = allMembers.find(m => m.id === id && m.birthday === birthday);
+
+            if (member) {
+                renderMemberCard(member);
+                showView('member-view');
+            } else {
+                showError('找不到符合的成員資訊，請確認輸入是否正確');
+            }
+        }
+
+        function loginAdmin() {
+            const user = document.getElementById('admin-user').value.trim();
+            const pass = document.getElementById('admin-pass').value.trim();
+
+            if (user === 'admin' && pass === 'trbb') {
+                renderAdminTable(allMembers);
+                showView('admin-view');
+            } else {
+                showError('管理密碼錯誤');
+            }
+        }
+
+        function renderMemberCard(member) {
+            const container = document.getElementById('card-container');
+            container.innerHTML = `
+                <div class="member-card w-full max-w-[320px] aspect-[1/1.6] rounded-[2.5rem] relative overflow-hidden text-gray-800 p-8 flex flex-col justify-between">
+                    <!-- 背景裝飾 -->
+                    <div class="absolute top-0 right-0 w-32 h-32 bg-rose-100 rounded-full -mr-16 -mt-16 opacity-50"></div>
+                    <div class="absolute bottom-0 left-0 w-24 h-24 bg-rose-200 rounded-full -ml-12 -mb-12 opacity-30"></div>
+                    
+                    <div>
+                        <div class="flex justify-between items-start mb-6">
+                            <span class="text-sm font-bold tracking-widest text-rose-500">TRBB MEMBER</span>
+                            <span class="text-gray-400 text-xs font-mono">ID: ${member.id}</span>
+                        </div>
+                        
+                        <div class="mb-8">
+                            <h3 class="text-4xl font-bold mb-1">${member.name}</h3>
+                            <div class="h-1 w-12 bg-rose-500 rounded-full"></div>
+                        </div>
+
+                        <div class="space-y-4">
+                            <div>
+                                <p class="text-[10px] text-gray-400 uppercase tracking-tighter">SURVIVAL GROUP</p>
+                                <p class="text-xl font-medium text-gray-700">${member.group || '未分配'}</p>
+                            </div>
+                            <div>
+                                <p class="text-[10px] text-gray-400 uppercase tracking-tighter">TABLE NO.</p>
+                                <p class="text-xl font-medium text-gray-700">${member.table || '待定'}</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="border-t border-dashed border-gray-300 pt-6 mt-6 flex justify-between items-end">
+                         <div>
+                            <p class="text-[10px] text-gray-400 uppercase tracking-tighter">BIRTHDAY</p>
+                            <p class="text-lg font-mono font-bold">${member.birthday}</p>
+                         </div>
+                         <div class="bg-gray-900 text-white p-2 rounded-lg">
+                            <i data-lucide="qr-code" class="w-6 h-6"></i>
+                         </div>
+                    </div>
+                </div>
+            `;
+            lucide.createIcons();
+        }
+
+        function renderAdminTable(data) {
+            const tbody = document.getElementById('admin-table-body');
+            tbody.innerHTML = data.map(m => `
+                <tr class="admin-row border-b border-white/5 last:border-0">
+                    <td class="py-4 font-mono text-gray-400">${m.id}</td>
+                    <td class="py-4 font-bold text-white">${m.name}</td>
+                    <td class="py-4"><span class="px-2 py-1 bg-white/10 rounded text-xs">${m.group}</span></td>
+                    <td class="py-4 text-orange-400 font-bold">${m.table}</td>
+                    <td class="py-4 text-xs text-gray-500">${m.birthday}</td>
+                </tr>
+            `).join('');
+            
+            // 更新組別篩選下拉選單
+            const groups = [...new Set(allMembers.map(m => m.group))].filter(g => g);
+            const select = document.getElementById('admin-filter-group');
+            const currentVal = select.value;
+            select.innerHTML = '<option value="">所有組別</option>' + 
+                groups.map(g => `<option value="${g}" ${currentVal === g ? 'selected' : ''}>${g}</option>`).join('');
+        }
+
+        function filterAdminTable() {
+            const searchTerm = document.getElementById('admin-search').value.toLowerCase();
+            const groupFilter = document.getElementById('admin-filter-group').value;
+
+            const filtered = allMembers.filter(m => {
+                const matchesSearch = m.name.toLowerCase().includes(searchTerm) || 
+                                    m.id.toLowerCase().includes(searchTerm) || 
+                                    m.table.toLowerCase().includes(searchTerm);
+                const matchesGroup = groupFilter === '' || m.group === groupFilter;
+                return matchesSearch && matchesGroup;
+            });
+
+            renderAdminTable(filtered);
+        }
+
+        function updateAdminStats() {
+            document.getElementById('stats-total').textContent = allMembers.length;
+        }
+
+        function showView(viewId) {
+            document.getElementById('login-screen').classList.add('hidden');
+            document.getElementById('member-view').classList.add('hidden');
+            document.getElementById('admin-view').classList.add('hidden');
+            document.getElementById(viewId).classList.remove('hidden');
+        }
+
+        function logout() {
+            document.getElementById('member-id').value = '';
+            document.getElementById('member-birthday').value = '';
+            document.getElementById('admin-pass').value = '';
+            showView('login-screen');
+            hideError();
+        }
+
+        function showError(msg) {
+            const err = document.getElementById('error-msg');
+            err.textContent = msg;
+            err.classList.remove('hidden');
+        }
+
+        function hideError() {
+            document.getElementById('error-msg').classList.add('hidden');
+        }
+
+        function showLoading(show) {
+            document.getElementById('loading-overlay').classList.toggle('hidden', !show);
+        }
+    </script>
+</body>
+</html>
