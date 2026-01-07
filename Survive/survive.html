@@ -24,14 +24,13 @@
 <body class="bg-slate-50 text-slate-900 pb-32 transition-colors duration-300">
 
     <script>
-        // --- 重要：請確認此 URL 為「新部署」且權限設為「所有人 (Anyone)」 ---
         const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbw6MRydsDHpHZMALEk-ncpienadNZI3LYXNGG_VWXX1VL6vQngZuiBuksqoJdbQZGOCxg/exec"; 
     </script>
 
     <!-- Header -->
-    <nav class="bg-white border-b border-slate-200 sticky top-0 z-50 px-4 py-3 shadow-sm text-left">
-        <div class="max-w-5xl mx-auto flex justify-between items-center">
-            <div class="flex items-center gap-2">
+    <nav class="bg-white border-b border-slate-200 sticky top-0 z-50 px-4 py-3 shadow-sm">
+        <div class="max-w-5xl mx-auto flex justify-between items-center text-left">
+            <div class="flex items-center gap-2 text-left">
                 <i data-lucide="medal" class="text-blue-600 w-6 h-6"></i>
                 <span class="font-black text-lg md:text-xl tracking-tight text-slate-800 uppercase leading-none">第 16 期 TRBB 鐵人生存戰</span>
             </div>
@@ -42,12 +41,12 @@
         </div>
     </nav>
 
-    <!-- 主要內容區：回報頁面 -->
+    <!-- 回報頁面 -->
     <main id="page-report" class="max-w-5xl mx-auto p-4 md:p-6 space-y-6 text-left">
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-6 items-stretch">
             <div class="lg:col-span-1 space-y-4">
                 <div class="grid grid-cols-2 lg:grid-cols-1 gap-3">
-                    <div class="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
+                    <div class="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm overflow-hidden text-left">
                         <span class="text-[10px] font-bold text-slate-400 uppercase mb-1 block tracking-wider">賽程週次</span>
                         <select id="weekSelect" onchange="handleContextChange()" class="w-full bg-transparent font-black text-slate-800 border-none p-0 outline-none cursor-pointer text-base">
                             <option value="1">測試週 1/5 ~ 1/11</option>
@@ -67,23 +66,22 @@
                     </div>
                 </div>
             </div>
-            <section id="statusPanel" class="lg:col-span-2 rounded-[32px] p-6 md:p-8 shadow-xl text-white transition-all duration-500 bg-tri-gradient relative overflow-hidden flex flex-col justify-center min-h-[160px]">
-                <div class="relative z-10">
+            <section id="statusPanel" class="lg:col-span-2 rounded-[32px] p-6 md:p-8 shadow-xl text-white transition-all duration-500 bg-tri-gradient relative overflow-hidden flex flex-col justify-center min-h-[160px] text-left">
+                <div class="relative z-10 text-left">
                     <p class="text-white/50 text-[10px] font-bold tracking-[2px] uppercase">本週達標次數</p>
-                    <div class="flex items-baseline gap-2 mt-1 text-left">
+                    <div class="flex items-baseline gap-2 mt-1">
                         <h2 id="totalTimesDisplay" class="text-6xl md:text-7xl font-black transition-all">0</h2>
                         <span class="text-xl font-bold opacity-40 uppercase">Times</span>
                     </div>
-                    <p id="targetTip" class="text-[11px] md:text-xs mt-2 font-bold text-blue-300 transition-all italic text-left">門檻：游 750m / 騎 20km / 跑 5km</p>
+                    <p id="targetTip" class="text-[11px] md:text-xs mt-2 font-bold text-blue-300 transition-all italic">門檻：游 750m / 騎 20km / 跑 5km</p>
                 </div>
                 <div id="statusIcon" class="absolute -right-4 -bottom-4 opacity-10 rotate-12 transition-all">
                     <i data-lucide="award" class="w-32 h-32 md:w-48 md:h-48"></i>
                 </div>
             </section>
         </div>
-        <div id="daysContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6"></div>
+        <div id="daysContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6 text-left"></div>
 
-        <!-- Footer -->
         <footer class="mt-8 pt-4 border-t border-slate-200 text-[10px] text-slate-400 text-center">
             <p>Copyright © 2026 Janice. All rights reserved.</p>
         </footer>
@@ -91,11 +89,12 @@
 
     <!-- 英雄榜頁面 -->
     <main id="page-results" class="hidden max-w-5xl mx-auto p-4 md:p-6 space-y-6 pb-32 text-left">
-        <div class="flex flex-col md:flex-row gap-4 items-center justify-between">
+        <div class="flex flex-col md:flex-row gap-4 items-center justify-between text-left">
             <h2 class="text-2xl font-black text-slate-800 flex items-center gap-2 italic leading-none"><i data-lucide="award" class="text-orange-500"></i> 三鐵英雄榜</h2>
-            <div class="flex gap-2 w-full md:w-auto">
+            <div class="flex gap-2 w-full md:w-auto text-left">
                 <select id="resultWeekSelect" onchange="renderRankings()" class="bg-white border border-slate-200 p-2.5 rounded-xl text-sm font-black focus:ring-2 focus:ring-blue-500 outline-none">
                     <option value="overall">開賽至今總累計</option>
+                    <option value="test_merged">測試週 1/5 ~ 1/11</option>
                     <option value="1">測試週 1/5 ~ 1/11</option>
                     <option value="2">第 1 週 1/12 ~ 1/18</option>
                     <option value="3">第 2 週 1/19 ~ 1/25</option>
@@ -111,9 +110,7 @@
                 </select>
             </div>
         </div>
-        <div id="rankingsGrid" class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6"></div>
-
-        <!-- Footer -->
+        <div id="rankingsGrid" class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 text-left"></div>
         <footer class="mt-8 pt-4 border-t border-slate-200 text-[10px] text-slate-400 text-center">
             <p>Copyright © 2026 Janice. All rights reserved.</p>
         </footer>
@@ -129,46 +126,42 @@
         </div>
     </div>
 
-    <!-- 姓名選擇彈窗 -->
+    <!-- 姓名選單彈窗 -->
     <div id="nameModal" class="fixed inset-0 bg-black/60 z-[100] hidden items-center justify-center p-4 backdrop-blur-sm">
-        <div class="bg-white w-full max-w-md rounded-[28px] max-h-[80vh] flex flex-col shadow-2xl transition-all scale-95 opacity-0 duration-200 overflow-hidden" id="modalContent">
+        <div class="bg-white w-full max-w-md rounded-[28px] max-h-[80vh] flex flex-col shadow-2xl transition-all scale-95 opacity-0 duration-200 overflow-hidden text-left" id="modalContent">
             <div class="p-6 flex justify-between items-center border-b border-slate-100 flex-shrink-0 text-left">
                 <div class="flex flex-col pr-4 overflow-hidden text-left">
                     <h3 id="modalTitle" class="font-black text-xl tracking-tight text-slate-800 truncate">選擇組別</h3>
-                    <div id="modalBreadcrumb" class="hidden text-[11px] font-bold text-blue-600 uppercase flex items-center gap-1 mt-1">
-                        <span onclick="resetSelection()" class="cursor-pointer underline decoration-2">重新選組</span>
+                    <div id="modalBreadcrumb" class="hidden text-[11px] font-bold text-blue-600 uppercase flex items-center gap-1 mt-1 text-left">
+                        <span onclick="resetSelection()" class="cursor-pointer underline decoration-2 text-left">重新選組</span>
                         <i data-lucide="chevron-right" class="w-3 h-3 text-left"></i>
                         <span id="currentSelectedGroup" class="text-slate-400 truncate max-w-[100px] text-left"></span>
                     </div>
                 </div>
-                <button onclick="closeNameModal()" class="p-2.5 bg-slate-100 rounded-full hover:bg-slate-200 transition-colors flex-shrink-0">
+                <button onclick="closeNameModal()" class="p-2.5 bg-slate-100 rounded-full hover:bg-slate-200 transition-colors flex-shrink-0 text-left">
                     <i data-lucide="x" class="w-5 h-5 text-slate-500"></i>
                 </button>
             </div>
             <div id="searchContainer" class="p-4 bg-slate-50 hidden flex-shrink-0 text-left">
                 <div class="relative text-left">
                     <i data-lucide="search" class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4 text-left"></i>
-                    <input id="nameSearch" oninput="renderSelection()" class="w-full pl-10 pr-4 py-3 bg-white rounded-2xl shadow-sm outline-none font-bold text-base focus:ring-2 focus:ring-blue-500 text-left text-left" placeholder="搜尋姓名...">
+                    <input id="nameSearch" oninput="renderSelection()" class="w-full pl-10 pr-4 py-3 bg-white rounded-2xl shadow-sm outline-none font-bold text-base focus:ring-2 focus:ring-blue-500 text-left" placeholder="搜尋姓名...">
                 </div>
             </div>
-            <div id="selectionList" class="overflow-y-auto p-4 flex-1 custom-scroll bg-white text-left text-left text-left"></div>
+            <div id="selectionList" class="overflow-y-auto p-4 flex-1 custom-scroll bg-white text-left"></div>
         </div>
     </div>
 
-    <!-- Loading 遮罩：成功提示優化 -->
+    <!-- Loading 遮罩 -->
     <div id="loader" class="fixed inset-0 bg-black/40 backdrop-blur-[2px] z-[200] hidden items-center justify-center p-6 text-center">
         <div class="bg-white rounded-[24px] p-8 flex flex-col items-center shadow-2xl border border-white/20 animate-in fade-in zoom-in duration-300 max-w-[280px] w-full min-h-[260px] justify-center text-center">
-            
             <div id="loader-spinner" class="w-16 h-16 border-4 border-blue-600 border-t-transparent rounded-full animate-spin text-center"></div>
-            
             <div id="loader-success" class="hidden flex flex-col items-center animate-success text-center">
                 <div class="w-24 h-24 bg-green-100 rounded-full flex items-center justify-center mb-4 text-center">
                     <i data-lucide="check" class="w-14 h-14 text-green-600 stroke-[4] text-center"></i>
                 </div>
             </div>
-
             <p id="loaderText" class="mt-6 font-black text-slate-800 tracking-wider text-lg leading-relaxed text-center">連線中...</p>
-            
             <button id="loaderCloseBtn" onclick="closeSuccessLoader()" class="hidden mt-6 w-full py-4 bg-green-600 text-white font-black rounded-2xl shadow-lg active:scale-95 transition-all text-base text-center">我知道了</button>
         </div>
     </div>
@@ -190,41 +183,22 @@
             }));
         }
 
-        window.onload = () => { 
-            resetDaysState(); 
-            lucide.createIcons(); 
-            syncMemberList(); 
-            checkWeekAvailability();
-            renderDays(); 
-        };
+        window.onload = () => { resetDaysState(); lucide.createIcons(); syncMemberList(); checkWeekAvailability(); renderDays(); };
 
-        // 防呆功能：檢查週次是否可用 (截止時間為隔週週二 24:00)
         function checkWeekAvailability() {
             const select = document.getElementById('weekSelect');
             const now = new Date();
             let latestAvailableWeek = 1;
-            
             Array.from(select.options).forEach(option => {
                 const weekVal = parseInt(option.value);
                 const startDate = new Date(WEEK_START_DATES[weekVal]);
-                
-                // 截止日為起始日(週一) + 9天 (即隔週週三凌晨 00:00)
                 const deadlineDate = new Date(startDate);
                 deadlineDate.setDate(startDate.getDate() + 9);
                 deadlineDate.setHours(0, 0, 0, 0);
-
-                if (now < startDate) {
-                    option.disabled = true; // 尚未開始
-                } else if (now >= deadlineDate) {
-                    option.disabled = true;
-                    if (!option.text.includes("(截止)")) option.text += " (截止)";
-                } else {
-                    option.disabled = false;
-                    latestAvailableWeek = weekVal;
-                }
+                if (now < startDate) option.disabled = true;
+                else if (now >= deadlineDate) { option.disabled = true; if (!option.text.includes("(截止)")) option.text += " (截止)"; }
+                else { option.disabled = false; latestAvailableWeek = weekVal; }
             });
-
-            // 如果目前選取的週次已截止，自動切換到最新的可用週次
             if (select.options[select.selectedIndex].disabled) {
                 state.weekNumber = latestAvailableWeek;
                 select.value = latestAvailableWeek;
@@ -250,41 +224,26 @@
 
         async function syncMemberList() {
             const loader = document.getElementById('loader');
-            const spinner = document.getElementById('loader-spinner');
-            const success = document.getElementById('loader-success');
-            const btn = document.getElementById('loaderCloseBtn');
             const text = document.getElementById('loaderText');
-            
-            spinner.classList.remove('hidden'); success.classList.add('hidden'); btn.classList.add('hidden');
-            text.innerText = "同步數據中...";
-            loader.classList.add('flex'); loader.classList.remove('hidden');
-
+            loader.classList.add('flex'); loader.classList.remove('hidden'); text.innerText = "同步全體數據中...";
             try {
                 const response = await fetch(GAS_WEB_APP_URL);
-                if (!response.ok) throw new Error("Network response was not ok");
                 const data = await response.json();
                 state.fullData = Array.isArray(data) ? data : [];
                 state.groups = [...new Set(state.fullData.map(item => item.group))].sort();
-                
                 const gSelect = document.getElementById('resultGroupSelect');
                 if(gSelect) gSelect.innerHTML = '<option value="all">全體選手</option>' + state.groups.map(g => `<option value="${g}">${g}</option>`).join('');
-                
                 renderSelection();
                 if (state.selectedName) handleContextChange();
-                loader.classList.add('hidden'); loader.classList.remove('flex');
             } catch (e) { 
                 console.error("Fetch Error:", e);
-                text.innerText = "連線失敗，請檢查網路";
-                btn.classList.remove('hidden');
-                btn.innerText = "重試";
-                btn.onclick = () => syncMemberList();
-            }
+                alert("同步失敗：請檢查網路連線。");
+            } finally { loader.classList.add('hidden'); loader.classList.remove('flex'); }
         }
 
         function handleContextChange() {
             state.weekNumber = parseInt(document.getElementById('weekSelect').value);
             resetDaysState();
-
             if (state.selectedName && state.fullData.length > 0) {
                 const participant = state.fullData.find(p => p.name === state.selectedName && p.group === state.selectedGroup);
                 if (participant && participant.weeklyRawData && participant.weeklyRawData[state.weekNumber]) {
@@ -308,10 +267,7 @@
         function selectName(name) {
             state.selectedName = name;
             const display = document.getElementById('displayName');
-            if (display) {
-                display.innerText = `${state.selectedGroup} - ${name}`;
-                display.classList.remove('italic');
-            }
+            if (display) { display.innerText = `${state.selectedGroup} - ${name}`; display.classList.remove('italic'); }
             closeNameModal(); handleContextChange();
         }
 
@@ -322,13 +278,13 @@
             const searchEl = document.getElementById('searchContainer');
             if (!state.selectedGroup) {
                 titleEl.innerText = "第一步：選擇組別"; breadcrumbEl.classList.add('hidden'); searchEl.classList.add('hidden');
-                listEl.innerHTML = state.groups.map(g => `<div onclick="selectGroup('${g}')" class="p-5 rounded-2xl mb-3 flex justify-between items-center cursor-pointer bg-slate-50 border border-slate-100 group text-left"><span class="font-black text-slate-700 text-base flex-1 pr-4">${g}</span><i data-lucide="chevron-right" class="w-5 h-5 text-slate-300"></i></div>`).join('');
+                listEl.innerHTML = state.groups.map(g => `<div onclick="selectGroup('${g}')" class="p-5 rounded-2xl mb-3 flex justify-between items-center cursor-pointer bg-slate-50 border border-slate-100 group text-left text-left"><span class="font-black text-slate-700 text-base flex-1 pr-4">${g}</span><i data-lucide="chevron-right" class="w-5 h-5 text-slate-300"></i></div>`).join('');
             } else {
                 titleEl.innerText = "第二步：選擇姓名"; breadcrumbEl.classList.remove('hidden'); searchEl.classList.remove('hidden');
                 document.getElementById('currentSelectedGroup').innerText = state.selectedGroup;
                 const term = document.getElementById('nameSearch').value;
                 const filtered = state.fullData.filter(item => item.group === state.selectedGroup && item.name.includes(term));
-                listEl.innerHTML = filtered.map(item => `<div onclick="selectName('${item.name}')" class="p-4 rounded-2xl mb-2 flex justify-between items-center cursor-pointer transition-all ${state.selectedName === item.name ? 'bg-blue-600 text-white shadow-lg text-left' : 'bg-slate-50 hover:bg-slate-100 text-left'}"><span class="font-bold text-base flex-1 pr-4 text-left">${item.name}</span>${state.selectedName === item.name ? '<i data-lucide="check" class="w-5 h-5"></i>' : '<i data-lucide="user" class="w-4 h-4 opacity-10 text-left"></i>'}</div>`).join('');
+                listEl.innerHTML = filtered.map(item => `<div onclick="selectName('${item.name}')" class="p-4 rounded-2xl mb-2 flex justify-between items-center cursor-pointer transition-all ${state.selectedName === item.name ? 'bg-blue-600 text-white shadow-lg text-left text-left' : 'bg-slate-50 hover:bg-slate-100 text-left text-left'}"><span class="font-bold text-base flex-1 pr-4 text-left">${item.name}</span>${state.selectedName === item.name ? '<i data-lucide="check" class="w-5 h-5 text-left"></i>' : '<i data-lucide="user" class="w-4 h-4 opacity-10 text-left text-left"></i>'}</div>`).join('');
             }
             lucide.createIcons();
         }
@@ -352,9 +308,9 @@
                 if (card) {
                     const isWeekend = d.name === '週六' || d.name === '週日';
                     const baseClass = isWeekend ? "bg-amber-50/60" : "bg-white";
-                    card.className = `${baseClass} rounded-[2.5rem] p-6 shadow-sm border-2 flex flex-col h-full transition-all duration-300 text-left ${sValid || bValid || rValid ? 'border-green-500 ring-8 ring-green-500/5' : 'border-transparent'}`;
+                    // --- 圓角調整處 (1/2): 此處控制卡片動態變色時的圓角 ---
+                    card.className = `${baseClass} rounded-[32px] p-6 shadow-sm border-2 flex flex-col h-full transition-all duration-300 text-left ${sValid || bValid || rValid ? 'border-green-500 ring-8 ring-green-500/5' : 'border-transparent'}`;
                 }
-
                 const sIn = document.getElementById(`input-${idx}-swim`);
                 const bIn = document.getElementById(`input-${idx}-bike`);
                 const rIn = document.getElementById(`input-${idx}-run`);
@@ -362,10 +318,8 @@
                 if(bIn) bIn.className = `w-full p-3 rounded-xl border-2 font-black text-center text-sm outline-none transition-all ${getInputClass(d.bike, THRESHOLDS.bike)}`;
                 if(rIn) rIn.className = `w-full p-3 rounded-xl border-2 font-black text-center text-sm outline-none transition-all ${getInputClass(d.run, THRESHOLDS.run)}`;
             });
-
             const tDisplay = document.getElementById('totalTimesDisplay');
             if(tDisplay) tDisplay.innerText = totalTimes;
-
             const panel = document.getElementById('statusPanel');
             const targetTip = document.getElementById('targetTip');
             const statusIcon = document.getElementById('statusIcon');
@@ -382,7 +336,6 @@
                     statusIcon.innerHTML = '<i data-lucide="medal" class="w-32 h-32 md:w-48 md:h-48 text-left"></i>';
                 }
             }
-
             const btn = document.getElementById('submitBtn');
             const btnText = document.getElementById('submitBtnText');
             if (btn && btnText) {
@@ -414,15 +367,29 @@
                 const isWeekend = day.name === '週六' || day.name === '週日';
                 const tagBg = isWeekend ? 'bg-amber-200 text-amber-900' : 'bg-slate-900 text-white';
                 return `
-                    <div id="card-${idx}" class="bg-white rounded-[2.5rem] p-6 shadow-sm border-2 border-transparent flex flex-col h-full transition-all duration-300 text-left">
-                        <div class="flex items-center gap-3 mb-5 shrink-0 text-left">
-                            <div class="w-10 h-10 rounded-xl ${tagBg} flex items-center justify-center font-black text-xs shrink-0">${day.name.replace('週','')}</div>
-                            <div class="flex flex-col text-left"><span class="font-black text-slate-800 tracking-tight text-lg leading-none text-left">${day.name}</span><span class="text-[10px] font-bold text-slate-400 mt-1 text-left">${getFormattedDate(state.weekNumber, idx)}</span></div>
+                    <!-- --- 圓角調整處 (2/2): 此處控制卡片初始渲染時的圓角 --- -->
+                    <div id="card-${idx}" class="bg-white rounded-[32px] p-6 shadow-sm border-2 border-transparent flex flex-col h-full transition-all duration-300 text-left text-left">
+                        <div class="flex items-center gap-3 mb-5 shrink-0 text-left text-left">
+                            <div class="w-10 h-10 rounded-xl ${tagBg} flex items-center justify-center font-black text-xs shrink-0 text-left text-left">${day.name.replace('週','')}</div>
+                            <div class="flex flex-col text-left text-left">
+                                <span class="font-black text-slate-800 tracking-tight text-2xl leading-none text-left text-left">
+                                    ${getFormattedDate(state.weekNumber, idx)}
+                                </span>
+                            </div>
                         </div>
-                        <div class="grid grid-cols-3 gap-3 mt-auto text-left">
-                            <div class="space-y-1 text-left"><span class="text-[9px] font-black text-slate-400 block uppercase tracking-tighter mb-1 text-left">🏊 游 (m)</span><input id="input-${idx}-swim" type="number" step="any" inputmode="decimal" oninput="this.value = this.value.replace(/[^0-9.]/g, ''); handleInput(${idx}, 'swim', this.value)" class="w-full p-3 rounded-xl border-2 font-black text-center text-sm outline-none" placeholder="0" value="${day.swim}"></div>
-                            <div class="space-y-1 text-left"><span class="text-[9px] font-black text-slate-400 block uppercase tracking-tighter mb-1 text-left">🚴 騎 (km)</span><input id="input-${idx}-bike" type="number" step="any" inputmode="decimal" oninput="this.value = this.value.replace(/[^0-9.]/g, ''); handleInput(${idx}, 'bike', this.value)" class="w-full p-3 rounded-xl border-2 font-black text-center text-sm outline-none" placeholder="0" value="${day.bike}"></div>
-                            <div class="space-y-1 text-left"><span class="text-[9px] font-black text-slate-400 block uppercase tracking-tighter mb-1 text-left">🏃 跑 (km)</span><input id="input-${idx}-run" type="number" step="any" inputmode="decimal" oninput="this.value = this.value.replace(/[^0-9.]/g, ''); handleInput(${idx}, 'run', this.value)" class="w-full p-3 rounded-xl border-2 font-black text-center text-sm outline-none" placeholder="0" value="${day.run}"></div>
+                        <div class="grid grid-cols-3 gap-3 mt-auto text-left text-left text-left">
+                            <div class="space-y-1 text-left text-left">
+                                <span class="text-[13px] font-black text-slate-400 block uppercase tracking-tighter mb-1 text-left whitespace-nowrap">🏊 游 (m)</span>
+                                <input id="input-${idx}-swim" type="number" step="any" inputmode="decimal" oninput="this.value = this.value.replace(/[^0-9.]/g, ''); handleInput(${idx}, 'swim', this.value)" class="w-full p-3 rounded-xl border-2 font-black text-center text-sm outline-none text-left" placeholder="0" value="${day.swim}">
+                            </div>
+                            <div class="space-y-1 text-left text-left">
+                                <span class="text-[13px] font-black text-slate-400 block uppercase tracking-tighter mb-1 text-left whitespace-nowrap">🚴 騎 (km)</span>
+                                <input id="input-${idx}-bike" type="number" step="any" inputmode="decimal" oninput="this.value = this.value.replace(/[^0-9.]/g, ''); handleInput(${idx}, 'bike', this.value)" class="w-full p-3 rounded-xl border-2 font-black text-center text-sm outline-none text-left" placeholder="0" value="${day.bike}">
+                            </div>
+                            <div class="space-y-1 text-left text-left">
+                                <span class="text-[13px] font-black text-slate-400 block uppercase tracking-tighter mb-1 text-left whitespace-nowrap">🏃 跑 (km)</span>
+                                <input id="input-${idx}-run" type="number" step="any" inputmode="decimal" oninput="this.value = this.value.replace(/[^0-9.]/g, ''); handleInput(${idx}, 'run', this.value)" class="w-full p-3 rounded-xl border-2 font-black text-center text-sm outline-none text-left" placeholder="0" value="${day.run}">
+                            </div>
                         </div>
                     </div>
                 `;
@@ -459,7 +426,7 @@
                                 if (score === 0) return '';
                                 const medals = ['🥇', '🥈', '🥉'];
                                 const formattedScore = sport.id === 'times' ? Math.round(score) : score.toFixed(1);
-                                return `<div class="flex items-center justify-between p-3 rounded-2xl ${idx === 0 ? 'bg-yellow-50 border border-yellow-100' : 'bg-slate-50'} text-left text-left"><div class="flex items-center gap-3 text-left text-left"><span>${medals[idx]}</span><div class="flex flex-col text-left text-left"><span class="font-black text-slate-800 text-sm text-left text-left text-left">${p.name}</span><span class="text-[9px] font-bold text-slate-400 uppercase text-left text-left text-left">${p.group}</span></div></div><span class="font-black text-${sport.color}-600 text-lg leading-none text-left text-left text-left">${formattedScore}<small class="text-[9px] ml-0.5 opacity-60 text-left text-left text-left text-left">${sport.unit}</small></span></div>`;
+                                return `<div class="flex items-center justify-between p-3 rounded-2xl ${idx === 0 ? 'bg-yellow-50 border border-yellow-100' : 'bg-slate-50'} text-left text-left"><div class="flex items-center gap-3 text-left text-left"><span>${medals[idx]}</span><div class="flex flex-col text-left text-left"><span class="font-black text-slate-800 text-sm text-left text-left">${p.name}</span><span class="text-[9px] font-bold text-slate-400 uppercase text-left text-left">${p.group}</span></div></div><span class="font-black text-${sport.color}-600 text-lg leading-none text-left text-left">${formattedScore}<small class="text-[9px] ml-0.5 opacity-60 text-left text-left">${sport.unit}</small></span></div>`;
                             }).join('')}
                         </div>
                     </div>
@@ -476,31 +443,18 @@
             const success = document.getElementById('loader-success');
             const btn = document.getElementById('loaderCloseBtn');
             const text = document.getElementById('loaderText');
-            
             spinner.classList.remove('hidden'); success.classList.add('hidden'); btn.classList.add('hidden');
             text.innerText = "正在上傳回報數據...";
             loader.classList.add('flex'); loader.classList.remove('hidden');
-
             try {
-                await fetch(GAS_WEB_APP_URL, { 
-                    method: 'POST', mode: 'no-cors', 
-                    body: JSON.stringify({ userName: state.selectedName, weekNumber: state.weekNumber, days: state.days }) 
-                });
-                
-                // 上傳完成 UI
-                spinner.classList.add('hidden');
-                success.classList.remove('hidden');
+                await fetch(GAS_WEB_APP_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify({ userName: state.selectedName, weekNumber: state.weekNumber, days: state.days }) });
+                spinner.classList.add('hidden'); success.classList.remove('hidden');
                 lucide.createIcons();
-                text.innerText = "上傳完成！\n";
+                text.innerHTML = "上傳完成！<br><span class='text-sm text-slate-400'>您可以關閉網頁了</span>";
                 btn.classList.remove('hidden');
                 btn.innerText = "我知道了";
-                
-                // 提交完後同步更新全體數據
                 await syncMemberListSilent(); 
-            } catch (e) { 
-                alert("提交失敗"); 
-                loader.classList.add('hidden'); loader.classList.remove('flex');
-            }
+            } catch (e) { alert("提交失敗"); loader.classList.add('hidden'); loader.classList.remove('flex'); }
         }
 
         async function syncMemberListSilent() {
@@ -515,7 +469,7 @@
             const loader = document.getElementById('loader');
             loader.classList.add('hidden');
             loader.classList.remove('flex');
-            handleContextChange(); // 重置介面供下次使用
+            handleContextChange(); 
         }
     </script>
 </body>
