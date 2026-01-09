@@ -349,7 +349,7 @@
                         statusWrapper.classList.remove('hidden');
                         statusTag.textContent = event.status;
                         statusTag.className = "px-2 rounded text-[20px] font-bold";
-                        if (event.status === '團報截止') statusTag.classList.add('bg-yellow-100', 'text-yellow-800');
+                        if (event.status === '團報截止') statusTag.classList.add('bg-red-100', 'text-red-800');
                         else if (event.status === '沒有團報') statusTag.classList.add('bg-gray-100', 'text-gray-800');
                         else if (event.status === '團報中') statusTag.classList.add('bg-green-100', 'text-green-800');
                         else statusTag.classList.add('bg-blue-100', 'text-blue-800');
