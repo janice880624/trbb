@@ -235,7 +235,7 @@
                 const weekVal = parseInt(option.value);
                 const startDate = new Date(WEEK_START_DATES[weekVal]);
                 const deadlineDate = new Date(startDate);
-                deadlineDate.setDate(startDate.getDate() + 9); 
+                deadlineDate.setDate(startDate.getDate() + 10); 
                 deadlineDate.setHours(0,0,0,0);
                 if (now < startDate) option.disabled = true;
                 else if (now >= deadlineDate) {
