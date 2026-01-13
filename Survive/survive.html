@@ -26,6 +26,56 @@
     <script>
         // --- 請確認此 URL 為「最新部署」後的網址 ---
         const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyFsOLNHBjz8Cogafno1XeP92hhmzWFIizTBu1Q_CC0TO46o1O1lB0YiX5PNdb2Q3Dm/exec"; 
+        const THRESHOLDS = { swim: 750, bike: 20, run: 5 };
+        const WEEK_START_DATES = {
+            1: "2026/01/05", 2: "2026/01/12", 3: "2026/01/19", 4: "2026/01/26",
+            5: "2026/02/02", 6: "2026/02/09", 7: "2026/02/16", 8: "2026/02/23",
+            9: "2026/03/02"
+        };
+
+        let state = { fullData: [], groups: [], selectedGroup: null, selectedName: '', weekNumber: 2, days: [] };
+
+        function resetDaysState() {
+            state.days = Array.from({length: 7}, (_, i) => ({ 
+                id: i+1, name: ['週一','週二','週三','週四','週五','週六','週日'][i],
+                swim: '', bike: '', run: '' 
+            }));
+        }
+
+        window.onload = () => { 
+            resetDaysState(); 
+            lucide.createIcons(); 
+            syncMemberList(); 
+            checkWeekAvailability(); 
+            renderDays(); 
+        };
+
+        // 儲存歷史選擇 (使用本機 localStorage)
+        function saveSelection(group, name) {
+            localStorage.setItem('trbb_remember_group', group);
+            localStorage.setItem('trbb_remember_name', name);
+        }
+
+        // 套用歷史資料到 UI
+        function applyHistory() {
+            const savedGroup = localStorage.getItem('trbb_remember_group');
+            const savedName = localStorage.getItem('trbb_remember_name');
+
+            if (savedGroup && savedName && !state.selectedName) {
+                // 確認目前獲取的名單中是否真的存在這個人
+                const exists = state.fullData.some(p => p.name === savedName && p.group === savedGroup);
+                if (exists) {
+                    state.selectedGroup = savedGroup;
+                    state.selectedName = savedName;
+                    const display = document.getElementById('displayName');
+                    if (display) {
+                        display.innerText = `${savedGroup} - ${savedName}`;
+                        display.classList.remove('italic');
+                    }
+                    handleContextChange();
+                }
+            }
+        }
     </script>
 
     <!-- Header (Sticky) -->
@@ -195,56 +245,7 @@
     </div>
 
     <script>
-        const THRESHOLDS = { swim: 750, bike: 20, run: 5 };
-        const WEEK_START_DATES = {
-            1: "2026/01/05", 2: "2026/01/12", 3: "2026/01/19", 4: "2026/01/26",
-            5: "2026/02/02", 6: "2026/02/09", 7: "2026/02/16", 8: "2026/02/23",
-            9: "2026/03/02"
-        };
-
-        let state = { fullData: [], groups: [], selectedGroup: null, selectedName: '', weekNumber: 2, days: [] };
-
-        function resetDaysState() {
-            state.days = Array.from({length: 7}, (_, i) => ({ 
-                id: i+1, name: ['週一','週二','週三','週四','週五','週六','週日'][i],
-                swim: '', bike: '', run: '' 
-            }));
-        }
-
-        window.onload = () => { 
-            resetDaysState(); 
-            lucide.createIcons(); 
-            syncMemberList(); 
-            checkWeekAvailability(); 
-            renderDays(); 
-        };
-
-        // 儲存歷史選擇 (使用本機 localStorage)
-        function saveSelection(group, name) {
-            localStorage.setItem('trbb_remember_group', group);
-            localStorage.setItem('trbb_remember_name', name);
-        }
-
-        // 套用歷史資料到 UI
-        function applyHistory() {
-            const savedGroup = localStorage.getItem('trbb_remember_group');
-            const savedName = localStorage.getItem('trbb_remember_name');
-
-            if (savedGroup && savedName && !state.selectedName) {
-                // 確認目前獲取的名單中是否真的存在這個人
-                const exists = state.fullData.some(p => p.name === savedName && p.group === savedGroup);
-                if (exists) {
-                    state.selectedGroup = savedGroup;
-                    state.selectedName = savedName;
-                    const display = document.getElementById('displayName');
-                    if (display) {
-                        display.innerText = `${savedGroup} - ${savedName}`;
-                        display.classList.remove('italic');
-                    }
-                    handleContextChange();
-                }
-            }
-        }
+        
 
         function getFormattedDate(weekNum, dayIdx) {
             const startDateStr = WEEK_START_DATES[weekNum];
