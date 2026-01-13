@@ -219,6 +219,33 @@
             renderDays(); 
         };
 
+        // 儲存歷史選擇 (使用本機 localStorage)
+        function saveSelection(group, name) {
+            localStorage.setItem('trbb_remember_group', group);
+            localStorage.setItem('trbb_remember_name', name);
+        }
+
+        // 套用歷史資料到 UI
+        function applyHistory() {
+            const savedGroup = localStorage.getItem('trbb_remember_group');
+            const savedName = localStorage.getItem('trbb_remember_name');
+
+            if (savedGroup && savedName && !state.selectedName) {
+                // 確認目前獲取的名單中是否真的存在這個人
+                const exists = state.fullData.some(p => p.name === savedName && p.group === savedGroup);
+                if (exists) {
+                    state.selectedGroup = savedGroup;
+                    state.selectedName = savedName;
+                    const display = document.getElementById('displayName');
+                    if (display) {
+                        display.innerText = `${savedGroup} - ${savedName}`;
+                        display.classList.remove('italic');
+                    }
+                    handleContextChange();
+                }
+            }
+        }
+
         function getFormattedDate(weekNum, dayIdx) {
             const startDateStr = WEEK_START_DATES[weekNum];
             if (!startDateStr) return "";
@@ -310,6 +337,7 @@
             const display = document.getElementById('displayName');
             if (display) { display.innerText = `${state.selectedGroup} - ${name}`; display.classList.remove('italic'); }
             closeNameModal(); handleContextChange();
+            saveSelection(state.selectedGroup, name);
         }
 
         function renderSelection() {
