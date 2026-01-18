@@ -24,161 +24,34 @@
 <body class="bg-slate-50 text-slate-900 pb-32 transition-colors duration-300">
 
     <script>
-        // --- 請確認此 URL 為「最新部署」後的網址 ---
-        const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyFsOLNHBjz8Cogafno1XeP92hhmzWFIizTBu1Q_CC0TO46o1O1lB0YiX5PNdb2Q3Dm/exec"; 
-        const THRESHOLDS = { swim: 750, bike: 20, run: 5 };
-        const WEEK_START_DATES = {
-            1: "2026/01/05", 2: "2026/01/12", 3: "2026/01/19", 4: "2026/01/26",
-            5: "2026/02/02", 6: "2026/02/09", 7: "2026/02/16", 8: "2026/02/23",
-            9: "2026/03/02"
-        };
-
-        let state = { fullData: [], groups: [], selectedGroup: null, selectedName: '', weekNumber: 2, days: [] };
-
-        function resetDaysState() {
-            state.days = Array.from({length: 7}, (_, i) => ({ 
-                id: i+1, name: ['週一','週二','週三','週四','週五','週六','週日'][i],
-                swim: '', bike: '', run: '' 
-            }));
-        }
-
-        window.onload = () => { 
-            resetDaysState(); 
-            lucide.createIcons(); 
-            syncMemberList(); 
-            checkWeekAvailability(); 
-            renderDays(); 
-        };
-
-        // 儲存歷史選擇 (使用本機 localStorage)
-        function saveSelection(group, name) {
-            localStorage.setItem('trbb_remember_group', group);
-            localStorage.setItem('trbb_remember_name', name);
-        }
-
-        // 套用歷史資料到 UI
-        function applyHistory() {
-            const savedGroup = localStorage.getItem('trbb_remember_group');
-            const savedName = localStorage.getItem('trbb_remember_name');
-
-            if (savedGroup && savedName && !state.selectedName) {
-                // 確認目前獲取的名單中是否真的存在這個人
-                const exists = state.fullData.some(p => p.name === savedName && p.group === savedGroup);
-                if (exists) {
-                    state.selectedGroup = savedGroup;
-                    state.selectedName = savedName;
-                    const display = document.getElementById('displayName');
-                    if (display) {
-                        display.innerText = `${savedGroup} - ${savedName}`;
-                        display.classList.remove('italic');
-                    }
-                    handleContextChange();
-                }
-            }
-        }
+        // --- 請確認此 URL 為最新部署網址 ---
+        const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxIDdUezevS7yKOvehWWfeRGNr7HIfXmBzcljriURQYXWuZ86yIE0atNvNQjknQSXGdZw/exec"; 
+        const USER_KEY = "trbb_user_remember";
     </script>
 
-    <!-- Header (Sticky) -->
+    <!-- Header -->
     <nav class="bg-white border-b border-slate-200 sticky top-0 z-50 px-4 py-3 shadow-sm h-[52px] flex items-center">
         <div class="max-w-5xl mx-auto w-full flex justify-between items-center text-left">
             <div class="flex items-center gap-2">
                 <i data-lucide="medal" class="text-blue-600 w-5 h-5"></i>
-                <span class="font-black text-[16px] md:text-xl tracking-tight text-slate-800 uppercase leading-none">TRBB 鐵人生存戰</span>
+                <span class="font-black text-base md:text-xl tracking-tight text-slate-800 uppercase leading-none">第 16 期 TRBB 鐵人生存戰</span>
             </div>
             <div class="flex gap-1 md:gap-2">
-                <button onclick="switchTab('report')" id="tab-report-btn" class="px-3 md:px-4 py-1.5 rounded-xl text-[12px] md:text-xs font-black transition-all bg-blue-600 text-white shadow-md">回報</button>
-                <button onclick="switchTab('results')" id="tab-results-btn" class="px-3 md:px-4 py-1.5 rounded-xl text-[12px] md:text-xs font-black transition-all text-slate-400 bg-slate-100 hover:bg-slate-200">英雄榜</button>
+                <button onclick="switchTab('report')" id="tab-report-btn" class="px-3 md:px-4 py-1.5 rounded-xl text-xs md:text-sm font-black transition-all bg-blue-600 text-white shadow-md">回報</button>
+                <button onclick="switchTab('results')" id="tab-results-btn" class="px-3 md:px-4 py-1.5 rounded-xl text-xs md:text-sm font-black transition-all text-slate-400 bg-slate-100 hover:bg-slate-200">英雄榜</button>
             </div>
         </div>
     </nav>
 
     <!-- 主要內容區 -->
-    <main class="max-w-5xl mx-auto p-4 md:p-6 text-left">
+    <main id="page-report" class="max-w-5xl mx-auto p-4 md:p-6 space-y-4 md:space-y-6 text-left">
         
-        <!-- 1. 回報數據分頁 -->
-        <div id="page-report" class="space-y-4 md:space-y-6">
-            
-            <!-- 週次與選手選擇欄 -->
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-6 items-start">
-                <div class="lg:col-span-1 grid grid-cols-2 lg:grid-cols-1 gap-3">
-                    <div class="bg-white p-3 md:p-4 rounded-2xl border border-slate-100 shadow-sm overflow-hidden text-left">
-                        <span class="text-[9px] md:text-[10px] font-bold text-slate-400 uppercase mb-1 block tracking-wider">賽程週次</span>
-                        <select id="weekSelect" onchange="handleContextChange()" class="w-full bg-transparent font-black text-slate-800 border-none p-0 outline-none cursor-pointer text-sm md:text-base">
-                            <option value="1">測試週 1/5 ~ 1/11</option>
-                            <option value="2">第 1 週 1/12 ~ 1/18</option>
-                            <option value="3">第 2 週 1/19 ~ 1/25</option>
-                            <option value="4">第 3 週 1/26 ~ 2/1</option>
-                            <option value="5">第 4 週 2/2 ~ 2/8</option>
-                            <option value="6">第 5 週 2/9 ~ 2/15</option>
-                            <option value="7">第 6 週 2/16 ~ 2/22</option>
-                            <option value="8">第 7 週 2/23 ~ 3/1</option>
-                            <option value="9">第 8 週 3/2 ~ 3/8</option>
-                            <option value="10">第 9 週 3/9 ~ 3/15</option>
-                            <option value="11">第 10 週 3/16 ~ 3/22</option>
-                        </select>
-                    </div>
-                    <div onclick="openNameModal()" class="bg-white p-3 md:p-4 rounded-2xl border border-slate-100 shadow-sm cursor-pointer active:bg-slate-50 min-h-[56px] flex flex-col justify-center text-left">
-                        <span class="text-[9px] md:text-[10px] font-bold text-slate-400 uppercase mb-0.5 block tracking-wider">選手姓名</span>
-                        <span id="displayName" class="font-black text-blue-600 block text-xs md:text-base italic leading-tight break-words">點擊選取選手...</span>
-                    </div>
-                </div>
-
-                <!-- 電腦版達標面板 -->
-                <div class="hidden lg:block lg:col-span-2">
-                    <section class="status-panel-ref rounded-[32px] p-8 shadow-xl text-white transition-all duration-500 bg-tri-gradient overflow-hidden flex flex-col justify-center min-h-[160px] relative">
-                        <div class="relative z-10 text-left">
-                            <p class="text-white/50 text-[10px] font-bold tracking-[2px] uppercase">本週達標次數</p>
-                            <div class="flex items-baseline gap-2 mt-1">
-                                <h2 class="totalTimesDisplay-ref text-7xl font-black transition-all">0</h2>
-                                <span class="text-xl font-bold opacity-40 uppercase">Times</span>
-                            </div>
-                            <p class="targetTip-ref text-xs mt-2 font-bold text-blue-300 transition-all italic">門檻：游 750m / 騎 20km / 跑 5km</p>
-                        </div>
-                        <div class="statusIcon-ref absolute -right-4 -bottom-4 opacity-10 rotate-12">
-                            <i data-lucide="award" class="w-48 h-48"></i>
-                        </div>
-                    </section>
-                </div>
-            </div>
-
-            <!-- 手機版置頂面板 (置頂於導航列下方) -->
-            <section id="statusPanel-mobile" class="lg:hidden status-panel-ref rounded-2xl p-3 shadow-lg text-white transition-all duration-300 bg-tri-gradient sticky top-[52px] z-40 overflow-hidden flex items-center min-h-[64px] border-b border-white/10 mx-[-4px]">
-                <div class="relative z-10 flex items-center gap-3 w-full px-1 text-left">
-                    <div class="statusIcon-ref opacity-20 shrink-0">
-                        <i data-lucide="award" class="w-6 h-6"></i>
-                    </div>
-                    <div class="flex-1 flex items-center justify-between text-left">
-                        <div class="flex flex-col text-left">
-                            <p class="text-white/70 text-[10px] font-black tracking-wider uppercase text-left">本週達標次數</p>
-                            <p class="targetTip-ref text-[11px] font-bold text-blue-300 transition-all italic leading-tight mt-0.5 whitespace-nowrap text-left">門檻：游 750m/騎 20k/跑 5k</p>
-                        </div>
-                        <div class="flex items-baseline gap-1 shrink-0 ml-2 text-left">
-                            <h2 class="totalTimesDisplay-ref text-2xl font-black transition-all">0</h2>
-                            <span class="text-[10px] font-bold opacity-40 uppercase">Times</span>
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            <!-- 數據卡片輸入區 -->
-            <div id="daysContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6 pt-2">
-                <!-- 由 JS 動態生成 -->
-            </div>
-
-            <!-- 版權宣告 -->
-            <footer class="mt-8 pt-4 border-t border-slate-200 text-[10px] text-slate-400 text-center pb-8">
-                <p>Copyright © 2026 Janice. All rights reserved.</p>
-            </footer>
-        </div>
-
-        <!-- 2. 英雄榜分頁 -->
-        <div id="page-results" class="hidden space-y-6 pb-32">
-            <div class="flex flex-col md:flex-row gap-4 items-center justify-between text-left">
-                <h2 class="text-xl md:text-2xl font-black text-slate-800 flex items-center gap-2 italic leading-none"><i data-lucide="award" class="text-orange-500"></i> 三鐵英雄榜</h2>
-                <div class="flex gap-2 w-full md:w-auto">
-                    <select id="resultWeekSelect" onchange="renderRankings()" class="flex-1 md:flex-none bg-white border border-slate-200 p-2 md:p-2.5 rounded-xl text-xs md:text-sm font-black focus:ring-2 focus:ring-blue-500 outline-none">
-                        <option value="overall">開賽至今總累計</option>
-                        <option value="test_merged">測試週 1/5 ~ 1/11</option>
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-6 items-start">
+            <div class="lg:col-span-1 grid grid-cols-2 lg:grid-cols-1 gap-3 text-left">
+                <div class="bg-white p-3 md:p-4 rounded-2xl border border-slate-100 shadow-sm overflow-hidden text-left">
+                    <span class="text-[9px] md:text-[10px] font-bold text-slate-400 uppercase mb-1 block tracking-wider">賽程週次</span>
+                    <select id="weekSelect" onchange="handleContextChange()" class="w-full bg-transparent font-black text-slate-800 border-none p-0 outline-none cursor-pointer text-sm md:text-base">
+                        <option value="1">測試週 1/5 ~ 1/11</option>
                         <option value="2">第 1 週 1/12 ~ 1/18</option>
                         <option value="3">第 2 週 1/19 ~ 1/25</option>
                         <option value="4">第 3 週 1/26 ~ 2/1</option>
@@ -190,66 +63,150 @@
                         <option value="10">第 9 週 3/9 ~ 3/15</option>
                         <option value="11">第 10 週 3/16 ~ 3/22</option>
                     </select>
-                    <select id="resultGroupSelect" onchange="renderRankings()" class="flex-1 md:flex-none bg-white border border-slate-200 p-2 md:p-2.5 rounded-xl text-xs md:text-sm font-black focus:ring-2 focus:ring-blue-500 outline-none">
-                        <option value="all">全體選手</option>
-                    </select>
+                </div>
+                <div onclick="openNameModal()" class="bg-white p-3 md:p-4 rounded-2xl border border-slate-100 shadow-sm cursor-pointer active:bg-slate-50 min-h-[56px] flex flex-col justify-center text-left overflow-hidden">
+                    <span class="text-[9px] md:text-[10px] font-bold text-slate-400 uppercase mb-0.5 block tracking-wider">選手姓名</span>
+                    <span id="displayName" class="font-black text-blue-600 block text-xs md:text-base italic leading-tight break-words">讀取名單中...</span>
                 </div>
             </div>
-            <div id="rankingsGrid" class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 text-left"></div>
-            <footer class="mt-8 pt-4 border-t border-slate-200 text-[10px] text-slate-400 text-center pb-8">
-                <p>Copyright © 2026 Janice. All rights reserved.</p>
-            </footer>
+
+            <!-- 達標面板 -->
+            <div class="hidden lg:block lg:col-span-2">
+                <section id="statusPanel-desktop" class="status-panel-ref rounded-[32px] p-8 shadow-xl text-white transition-all duration-500 bg-tri-gradient overflow-hidden flex flex-col justify-center min-h-[160px] relative text-left">
+                    <div class="relative z-10">
+                        <p class="text-white/50 text-[10px] font-bold tracking-[2px] uppercase">本週達標次數</p>
+                        <div class="flex items-baseline gap-2 mt-1 text-left">
+                            <h2 class="totalTimesDisplay-ref text-7xl font-black transition-all">0</h2>
+                            <span class="text-xl font-bold opacity-40 uppercase">Times</span>
+                        </div>
+                        <p class="targetTip-ref text-xs mt-2 font-bold text-blue-300 transition-all italic text-left">門檻：游 750m / 騎 20km / 跑 5km</p>
+                    </div>
+                    <div class="statusIcon-ref absolute -right-4 -bottom-4 opacity-10 rotate-12 transition-all"><i data-lucide="award" class="w-48 h-48"></i></div>
+                </section>
+            </div>
         </div>
 
+        <section id="statusPanel-mobile" class="lg:hidden status-panel-ref rounded-2xl p-3 shadow-lg text-white transition-all duration-300 bg-tri-gradient sticky top-[52px] z-40 overflow-hidden flex items-center min-h-[64px] border-b border-white/10 mx-[-4px] text-left">
+            <div class="relative z-10 flex items-center gap-3 w-full px-1 text-left">
+                <div class="statusIcon-ref opacity-20 shrink-0 text-left"><i data-lucide="award" class="w-6 h-6"></i></div>
+                <div class="flex-1 flex items-center justify-between text-left">
+                    <div class="flex flex-col text-left">
+                        <p class="text-white/70 text-[10px] font-black tracking-wider uppercase text-left">本週達標次數</p>
+                        <p class="targetTip-ref text-[11px] font-bold text-blue-300 transition-all italic leading-tight mt-0.5 text-left whitespace-nowrap">門檻：游 750m / 騎 20km / 跑 5km</p>
+                    </div>
+                    <div class="flex items-baseline gap-1 shrink-0 ml-2 text-left">
+                        <h2 class="totalTimesDisplay-ref text-2xl font-black transition-all text-left">0</h2>
+                        <span class="text-[10px] font-bold opacity-40 uppercase text-left">Times</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <div id="daysContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6 pt-2 text-left"></div>
+
+        <footer class="mt-8 pt-4 border-t border-slate-200 text-[10px] text-slate-400 text-center pb-8">
+            <p>Copyright © 2026 Janice. All rights reserved.</p>
+        </footer>
     </main>
 
-    <!-- 底部按鈕欄 -->
-    <div id="submitBar" class="fixed bottom-0 left-0 right-0 p-3 md:p-4 bg-white/90 backdrop-blur-lg border-t border-slate-100 z-50 shadow-[0_-10px_20px_rgba(0,0,0,0.05)]">
+    <!-- 英雄榜頁面 -->
+    <main id="page-results" class="hidden max-w-5xl mx-auto p-4 md:p-6 space-y-6 pb-32 text-left">
+        <div class="flex flex-col md:flex-row gap-4 items-center justify-between text-left">
+            <h2 class="text-xl md:text-2xl font-black text-slate-800 flex items-center gap-2 italic leading-none text-left"><i data-lucide="award" class="text-orange-500"></i> 三鐵英雄榜</h2>
+            <div class="flex gap-2 w-full md:w-auto text-left">
+                <select id="resultWeekSelect" onchange="renderRankings()" class="flex-1 md:flex-none bg-white border border-slate-200 p-2 md:p-2.5 rounded-xl text-xs md:text-sm font-black focus:ring-2 focus:ring-blue-500 outline-none text-left">
+                    <option value="overall">開賽至今總累計</option>
+                        <option value="1">測試週 1/5 ~ 1/11</option>
+                        <option value="2">第 1 週 1/12 ~ 1/18</option>
+                        <option value="3">第 2 週 1/19 ~ 1/25</option>
+                        <option value="4">第 3 週 1/26 ~ 2/1</option>
+                        <option value="5">第 4 週 2/2 ~ 2/8</option>
+                        <option value="6">第 5 週 2/9 ~ 2/15</option>
+                        <option value="7">第 6 週 2/16 ~ 2/22</option>
+                        <option value="8">第 7 週 2/23 ~ 3/1</option>
+                        <option value="9">第 8 週 3/2 ~ 3/8</option>
+                        <option value="10">第 9 週 3/9 ~ 3/15</option>
+                        <option value="11">第 10 週 3/16 ~ 3/22</option>
+                </select>
+                <select id="resultGroupSelect" onchange="renderRankings()" class="flex-1 md:flex-none bg-white border border-slate-200 p-2 md:p-2.5 rounded-xl text-xs md:text-sm font-black focus:ring-2 focus:ring-blue-500 outline-none text-left">
+                    <option value="all">全體選手</option>
+                </select>
+            </div>
+        </div>
+        <div id="rankingsGrid" class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 text-left"></div>
+        <footer class="mt-8 pt-4 border-t border-slate-200 text-[10px] text-slate-400 text-center pb-8">
+            <p>Copyright © 2026 Janice. All rights reserved.</p>
+        </footer>
+    </main>
+
+    <!-- 底部提交欄 -->
+    <div id="submitBar" class="fixed bottom-0 left-0 right-0 p-3 md:p-4 bg-white/90 backdrop-blur-lg border-t border-slate-100 z-50">
         <div class="max-w-md mx-auto">
-            <button onclick="handleSubmit()" id="submitBtn" class="w-full py-3 md:py-5 rounded-2xl md:rounded-3xl font-black text-base md:text-xl flex items-center justify-center gap-2 md:gap-3 shadow-xl bg-slate-200 text-slate-400 transition-all duration-300 text-left" disabled>
-                <i data-lucide="send" class="w-5 h-5 md:w-6 h-6"></i>
+            <button onclick="handleSubmit()" id="submitBtn" class="w-full py-3 md:py-5 rounded-2xl md:rounded-3xl font-black text-base md:text-xl flex items-center justify-center gap-2 shadow-xl bg-slate-200 text-slate-400 transition-all duration-300 text-left" disabled>
+                <i data-lucide="send" class="w-5 h-5 md:w-6 h-6 text-left"></i>
                 <span id="submitBtnText">請選取姓名</span>
             </button>
         </div>
     </div>
 
-    <!-- 姓名選擇彈窗 -->
-    <div id="nameModal" class="fixed inset-0 bg-black/60 z-[100] hidden items-center justify-center p-4 backdrop-blur-sm">
+    <!-- 選手選擇 Modal -->
+    <div id="nameModal" class="fixed inset-0 bg-black/60 z-[100] hidden items-center justify-center p-4 backdrop-blur-sm text-left">
         <div id="modalContent" class="bg-white w-full max-w-md rounded-[28px] max-h-[80vh] flex flex-col shadow-2xl transition-all scale-95 opacity-0 duration-200 overflow-hidden text-left">
-            <div class="p-5 md:p-6 flex justify-between items-center border-b border-slate-100 flex-shrink-0">
+            <div class="p-5 md:p-6 flex justify-between items-center border-b border-slate-100 flex-shrink-0 text-left">
                 <div class="flex flex-col pr-4 overflow-hidden text-left">
-                    <h3 id="modalTitle" class="font-black text-lg md:text-xl tracking-tight text-slate-800 truncate">選擇選手</h3>
-                    <div id="modalBreadcrumb" class="hidden text-[10px] font-bold text-blue-600 uppercase flex items-center gap-1 mt-1">
-                        <span onclick="resetSelection()" class="cursor-pointer underline decoration-2">重選組別</span>
-                        <i data-lucide="chevron-right" class="w-3 h-3 text-left"></i>
-                        <span id="currentSelectedGroup" class="text-slate-400 truncate max-w-[100px]"></span>
+                    <h3 id="modalTitle" class="font-black text-lg md:text-xl tracking-tight text-slate-800 truncate text-left">選擇選手</h3>
+                    <div id="modalBreadcrumb" class="hidden text-[11px] font-bold text-blue-600 uppercase flex items-center gap-1 mt-1 text-left text-left">
+                        <span onclick="resetSelection()" class="cursor-pointer underline decoration-2 text-left text-left">重選組別</span>
+                        <i data-lucide="chevron-right" class="w-3 h-3 text-left text-left"></i>
+                        <span id="currentSelectedGroup" class="text-slate-400 truncate max-w-[100px] text-left text-left"></span>
                     </div>
                 </div>
-                <button onclick="closeNameModal()" class="p-2.5 bg-slate-100 rounded-full hover:bg-slate-200"><i data-lucide="x" class="w-5 h-5 text-slate-500"></i></button>
+                <button onclick="closeNameModal()" class="p-2.5 bg-slate-100 rounded-full hover:bg-slate-200 transition-colors flex-shrink-0 text-left text-left"><i data-lucide="x" class="w-5 h-5 text-slate-500"></i></button>
             </div>
-            <div id="searchContainer" class="p-4 bg-slate-50 hidden flex-shrink-0 text-left">
-                <div class="relative text-left">
-                    <i data-lucide="search" class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4"></i>
-                    <input id="nameSearch" oninput="renderSelection()" class="w-full pl-10 pr-4 py-2.5 md:py-3 bg-white rounded-2xl shadow-sm outline-none font-bold text-sm md:text-base focus:ring-2 focus:ring-blue-500" placeholder="搜尋姓名...">
+            <div id="searchContainer" class="p-4 bg-slate-50 hidden flex-shrink-0 text-left text-left text-left text-left">
+                <div class="relative text-left text-left text-left">
+                    <i data-lucide="search" class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4 text-left text-left"></i>
+                    <input id="nameSearch" oninput="renderSelection()" class="w-full pl-10 pr-4 py-2.5 md:py-3 bg-white rounded-2xl shadow-sm outline-none font-bold text-sm md:text-base focus:ring-2 focus:ring-blue-500 text-left text-left text-left" placeholder="搜尋姓名...">
                 </div>
             </div>
-            <div id="selectionList" class="overflow-y-auto p-3 md:p-4 flex-1 custom-scroll bg-white"></div>
+            <div id="selectionList" class="overflow-y-auto p-3 md:p-4 flex-1 custom-scroll bg-white text-left text-left text-left"></div>
         </div>
     </div>
 
     <!-- Loading -->
-    <div id="loader" class="fixed inset-0 bg-black/40 backdrop-blur-[2px] z-[200] hidden items-center justify-center p-6 text-center text-left">
-        <div class="bg-white rounded-[24px] p-8 flex flex-col items-center shadow-2xl border border-white/20 animate-in fade-in zoom-in duration-300 max-w-[260px] w-full min-h-[220px] justify-center">
-            <div id="loader-spinner" class="w-16 h-16 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-            <div id="loader-success" class="hidden flex flex-col items-center animate-success">
-                <div class="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mb-2"><i data-lucide="check" class="w-12 h-12 text-green-600 stroke-[3]"></i></div>
-            </div>
-            <p id="loaderText" class="mt-6 font-black text-slate-800 tracking-wider text-sm italic">連線中...</p>
+    <div id="loader" class="fixed inset-0 bg-black/40 backdrop-blur-[2px] z-[200] hidden items-center justify-center p-6 text-center text-left text-left text-left">
+        <div class="bg-white rounded-[24px] p-8 flex flex-col items-center shadow-2xl border border-white/20 animate-in fade-in zoom-in duration-300 max-w-[260px] w-full min-h-[220px] justify-center text-center text-left text-left text-left">
+            <div id="loader-spinner" class="w-16 h-16 border-4 border-blue-600 border-t-transparent rounded-full animate-spin text-left text-left"></div>
+            <div id="loader-success" class="hidden flex flex-col items-center animate-success text-left text-left text-left text-left text-left text-left text-left"><i data-lucide="check" class="w-12 h-12 text-green-600 stroke-[3] text-left text-left text-left text-left text-left text-left"></i></div>
+            <p id="loaderText" class="mt-6 font-black text-slate-800 tracking-wider text-sm italic text-left text-left text-left text-left text-left text-left">資料同步中...</p>
         </div>
     </div>
 
     <script>
-        
+        const THRESHOLDS = { swim: 750, bike: 20, run: 5 };
+        const WEEK_START_DATES = {
+            1: "2026/01/05", 2: "2026/01/12", 3: "2026/01/19", 4: "2026/01/26",
+            5: "2026/02/02", 6: "2026/02/09", 7: "2026/02/16", 8: "2026/02/23",
+            9: "2026/03/02", 10: "2026/03/09", 11: "2026/03/16"
+        };
+
+        let state = { 
+            memberList: [], // 僅儲存姓名組別 (快速)
+            leaderboardData: [], // 英雄榜數據 (大數據，按需載入)
+            currentUserData: null, // 當前選中選手的數據 (按需載入)
+            groups: [], 
+            selectedGroup: null, 
+            selectedName: '', 
+            weekNumber: 2, 
+            days: [] 
+        };
+
+        function resetDaysState() {
+            state.days = Array.from({length: 7}, (_, i) => ({ 
+                id: i+1, name: ['週一','週二','週三','週四','週五','週六','週日'][i],
+                swim: '', bike: '', run: '' 
+            }));
+        }
 
         function getFormattedDate(weekNum, dayIdx) {
             const startDateStr = WEEK_START_DATES[weekNum];
@@ -257,6 +214,108 @@
             const d = new Date(startDateStr);
             d.setDate(d.getDate() + dayIdx);
             return (d.getMonth() + 1) + "/" + d.getDate();
+        }
+
+        // --- 核心優化：優先抓取名單 ---
+        window.onload = async () => { 
+            resetDaysState(); 
+            lucide.createIcons(); 
+            checkWeekAvailability();
+            
+            // 優先從本機抓取名單快取
+            const cachedMembers = localStorage.getItem("trbb_members_cache");
+            if (cachedMembers) {
+                state.memberList = JSON.parse(cachedMembers);
+                updateGroups();
+                applyRememberedUser(); // 如果手機有記住人，先執行這步
+            }
+
+            // 非同步抓取最新名單 (秒開)
+            await syncMemberList(); 
+            renderDays(); 
+        };
+
+        function updateGroups() {
+            state.groups = [...new Set(state.memberList.map(item => item.group))].sort();
+            const gSelect = document.getElementById('resultGroupSelect');
+            if(gSelect) gSelect.innerHTML = '<option value="all">全體選手</option>' + state.groups.map(g => `<option value="${g}">${g}</option>`).join('');
+            renderSelection();
+        }
+
+        function applyRememberedUser() {
+            const saved = localStorage.getItem(USER_KEY);
+            if (saved && !state.selectedName) {
+                try {
+                    const { group, name } = JSON.parse(saved);
+                    const member = state.memberList.find(p => p.name.trim() === name.trim() && p.group.trim() === group.trim());
+                    if (member) {
+                        selectName(name, group, false); // false 代表不要儲存，因為本來就在裡面
+                    }
+                } catch(e) {}
+            } else if (!state.selectedName) {
+                document.getElementById('displayName').innerText = "點擊選取選手...";
+            }
+        }
+
+        // 僅同步姓名名單 (Action: members)
+        async function syncMemberList() {
+            try {
+                const response = await fetch(`${GAS_WEB_APP_URL}?action=members`);
+                const data = await response.json();
+                state.memberList = data;
+                localStorage.setItem("trbb_members_cache", JSON.stringify(data));
+                updateGroups();
+                if (localStorage.getItem(USER_KEY)) applyRememberedUser();
+            } catch (e) { console.error("Sync list error:", e); }
+        }
+
+        // --- 核心優化：選人後才抓該員數據 ---
+        async function loadPersonalData(name) {
+            const loader = document.getElementById('loader');
+            const text = document.getElementById('loaderText');
+            text.innerText = `正在讀取 ${name} 的數據...`;
+            loader.classList.add('flex'); loader.classList.remove('hidden');
+
+            try {
+                const res = await fetch(`${GAS_WEB_APP_URL}?action=user&name=${encodeURIComponent(name)}`);
+                const data = await res.json();
+                state.currentUserData = data;
+                fillCurrentWeekData();
+            } catch (e) { alert("讀取個人資料失敗"); }
+            finally { loader.classList.add('hidden'); loader.classList.remove('flex'); }
+        }
+
+        function fillCurrentWeekData() {
+            if (state.currentUserData && state.currentUserData.weeklyRawData[state.weekNumber]) {
+                const raw = state.currentUserData.weeklyRawData[state.weekNumber];
+                for (let d = 0; d < 7; d++) {
+                    const sVal = raw[d * 3];
+                    state.days[d].swim = (sVal !== "" && sVal !== undefined && !isNaN(sVal)) ? Math.round(parseFloat(sVal) * 1000) : "";
+                    state.days[d].bike = (raw[d * 3 + 1] !== "" && raw[d * 3 + 1] !== undefined) ? raw[d * 3 + 1] : "";
+                    state.days[d].run = (raw[d * 3 + 2] !== "" && raw[d * 3 + 2] !== undefined) ? raw[d * 3 + 2] : "";
+                }
+            } else {
+                resetDaysState();
+            }
+            renderDays();
+            updateUI();
+        }
+
+        // --- 核心優化：點英雄榜才抓排名數據 ---
+        async function syncLeaderboardData() {
+            if (state.leaderboardData.length > 0) return; // 已有數據則不重複抓
+
+            const loader = document.getElementById('loader');
+            const text = document.getElementById('loaderText');
+            text.innerText = "正在統計英雄榜數據...";
+            loader.classList.add('flex'); loader.classList.remove('hidden');
+
+            try {
+                const response = await fetch(`${GAS_WEB_APP_URL}?action=leaderboard`);
+                state.leaderboardData = await response.json();
+                renderRankings();
+            } catch (e) { alert("讀取排行榜失敗"); }
+            finally { loader.classList.add('hidden'); loader.classList.remove('flex'); }
         }
 
         function checkWeekAvailability() {
@@ -286,63 +345,35 @@
             document.getElementById('page-report').classList.toggle('hidden', tab !== 'report');
             document.getElementById('page-results').classList.toggle('hidden', tab !== 'results');
             document.getElementById('submitBar').classList.toggle('hidden', tab !== 'report');
-            const btnR = document.getElementById('tab-report-btn');
-            const btnRes = document.getElementById('tab-results-btn');
-            if(tab === 'report') {
-                btnR.className = "px-4 py-2 rounded-xl text-xs font-black transition-all bg-blue-600 text-white shadow-md";
-                btnRes.className = "px-4 py-2 rounded-xl text-xs font-black transition-all text-slate-400 bg-slate-100 hover:bg-slate-200";
-            } else {
-                btnRes.className = "px-4 py-2 rounded-xl text-xs font-black transition-all bg-orange-600 text-white shadow-md";
-                btnR.className = "px-4 py-2 rounded-xl text-xs font-black transition-all text-slate-400 bg-slate-100 hover:bg-slate-200";
-                renderRankings();
-            }
-        }
-
-        async function syncMemberList() {
-            const loader = document.getElementById('loader');
-            loader.classList.add('flex'); loader.classList.remove('hidden');
-            try {
-                const response = await fetch(GAS_WEB_APP_URL);
-                const data = await response.json();
-                state.fullData = Array.isArray(data) ? data : [];
-                state.groups = [...new Set(state.fullData.map(item => item.group))].sort();
-                const gSelect = document.getElementById('resultGroupSelect');
-                if(gSelect) gSelect.innerHTML = '<option value="all">全體選手</option>' + state.groups.map(g => `<option value="${g}">${g}</option>`).join('');
-                renderSelection();
-                if (state.selectedName) handleContextChange();
-            } catch (e) { alert("同步失敗"); }
-            finally { loader.classList.add('hidden'); loader.classList.remove('flex'); }
+            if(tab === 'results') syncLeaderboardData();
         }
 
         function handleContextChange() {
             state.weekNumber = parseInt(document.getElementById('weekSelect').value);
-            resetDaysState();
-            if (state.selectedName && state.fullData.length > 0) {
-                const participant = state.fullData.find(p => p.name === state.selectedName && p.group === state.selectedGroup);
-                if (participant && participant.weeklyRawData && participant.weeklyRawData[state.weekNumber]) {
-                    const raw = participant.weeklyRawData[state.weekNumber];
-                    for (let d = 0; d < 7; d++) {
-                        const sVal = raw[d * 3];
-                        state.days[d].swim = (sVal !== "" && sVal !== undefined && !isNaN(sVal)) ? Math.round(parseFloat(sVal) * 1000) : "";
-                        state.days[d].bike = (raw[d * 3 + 1] !== "" && raw[d * 3 + 1] !== undefined) ? raw[d * 3 + 1] : "";
-                        state.days[d].run = (raw[d * 3 + 2] !== "" && raw[d * 3 + 2] !== undefined) ? raw[d * 3 + 2] : "";
-                    }
-                }
+            if (state.selectedName) {
+                fillCurrentWeekData();
             }
-            renderDays();
-            updateUI();
         }
 
         function openNameModal() { document.getElementById('nameModal').classList.remove('hidden'); document.getElementById('nameModal').classList.add('flex'); setTimeout(() => { document.getElementById('modalContent').classList.remove('scale-95', 'opacity-0'); document.getElementById('modalContent').classList.add('scale-100', 'opacity-100'); }, 50); renderSelection(); }
         function closeNameModal() { document.getElementById('modalContent').classList.add('scale-95', 'opacity-0'); document.getElementById('modalContent').classList.remove('scale-100', 'opacity-100'); setTimeout(() => { document.getElementById('nameModal').classList.add('hidden'); document.getElementById('nameModal').classList.remove('flex'); }, 200); }
         function resetSelection() { state.selectedGroup = null; document.getElementById('nameSearch').value = ''; renderSelection(); }
         function selectGroup(group) { state.selectedGroup = group; renderSelection(); }
-        function selectName(name) {
+        
+        function selectName(name, group = null, shouldSave = true) {
             state.selectedName = name;
+            if (group) state.selectedGroup = group;
             const display = document.getElementById('displayName');
-            if (display) { display.innerText = `${state.selectedGroup} - ${name}`; display.classList.remove('italic'); }
-            closeNameModal(); handleContextChange();
-            saveSelection(state.selectedGroup, name);
+            if (display) { 
+                display.innerText = `${state.selectedGroup} - ${name}`; 
+                display.classList.remove('italic'); 
+                display.classList.add('text-blue-600');
+            }
+            if (shouldSave) {
+                localStorage.setItem(USER_KEY, JSON.stringify({ group: state.selectedGroup, name }));
+            }
+            closeNameModal(); 
+            loadPersonalData(name); // 觸發特定讀取
         }
 
         function renderSelection() {
@@ -351,23 +382,20 @@
                 document.getElementById('modalTitle').innerText = "第一步：選擇組別";
                 document.getElementById('modalBreadcrumb').classList.add('hidden');
                 document.getElementById('searchContainer').classList.add('hidden');
-                listEl.innerHTML = state.groups.map(g => `<div onclick="selectGroup('${g}')" class="p-4 rounded-2xl mb-2 flex justify-between items-center cursor-pointer bg-slate-50 border border-slate-100 text-left"><span class="font-black text-slate-700 text-sm flex-1 pr-4">${g}</span><i data-lucide="chevron-right" class="w-4 h-4 text-slate-300"></i></div>`).join('');
+                listEl.innerHTML = state.groups.map(g => `<div onclick="selectGroup('${g}')" class="p-4 rounded-2xl mb-2 flex justify-between items-center cursor-pointer bg-slate-50 border border-slate-100 text-left text-left text-left"><span class="font-black text-slate-700 text-sm flex-1 pr-4 text-left text-left">${g}</span><i data-lucide="chevron-right" class="w-4 h-4 text-left text-left"></i></div>`).join('');
             } else {
                 document.getElementById('modalTitle').innerText = "第二步：選擇姓名";
                 document.getElementById('modalBreadcrumb').classList.remove('hidden');
                 document.getElementById('searchContainer').classList.remove('hidden');
                 document.getElementById('currentSelectedGroup').innerText = state.selectedGroup;
                 const term = document.getElementById('nameSearch').value;
-                const filtered = state.fullData.filter(item => item.group === state.selectedGroup && item.name.includes(term));
-                listEl.innerHTML = filtered.map(item => `<div onclick="selectName('${item.name}')" class="p-3.5 rounded-2xl mb-1 flex justify-between items-center cursor-pointer transition-all ${state.selectedName === item.name ? 'bg-blue-600 text-white shadow-lg text-left' : 'bg-slate-50 hover:bg-slate-100 text-left'}"><span class="font-bold text-sm flex-1 pr-4">${item.name}</span>${state.selectedName === item.name ? '<i data-lucide="check" class="w-4 h-4"></i>' : '<i data-lucide="user" class="w-4 h-4 opacity-10 text-left"></i>'}</div>`).join('');
+                const filtered = state.memberList.filter(i => i.group === state.selectedGroup && i.name.includes(term));
+                listEl.innerHTML = filtered.map(i => `<div onclick="selectName('${i.name}', '${i.group}')" class="p-3.5 rounded-2xl mb-1 flex justify-between items-center cursor-pointer transition-all ${state.selectedName === i.name ? 'bg-blue-600 text-white shadow-lg text-left text-left' : 'bg-slate-50 hover:bg-slate-100'} text-left text-left"><span class="font-bold text-sm flex-1 pr-4 text-left text-left">${i.name}</span>${state.selectedName === i.name ? '<i data-lucide="check" class="w-4 h-4 text-left text-left"></i>' : '<i data-lucide="user" class="w-4 h-4 opacity-10 text-left text-left"></i>'}</div>`).join('');
             }
             lucide.createIcons();
         }
 
-        function handleInput(dayIdx, field, val) { 
-            state.days[dayIdx][field] = val; 
-            updateUI(); 
-        }
+        function handleInput(dayIdx, field, val) { state.days[dayIdx][field] = val; updateUI(); }
 
         function updateUI() {
             let totalTimes = 0;
@@ -380,7 +408,7 @@
                 if (card) {
                     const isWeekend = d.name === '週六' || d.name === '週日';
                     const baseClass = isWeekend ? "bg-amber-50/60" : "bg-white";
-                    card.className = `${baseClass} rounded-[2rem] p-4 md:p-6 shadow-sm border-2 flex flex-col h-full transition-all duration-300 text-left ${sValid || bValid || rValid ? 'border-green-500 ring-4 ring-green-500/5' : 'border-transparent'}`;
+                    card.className = `${baseClass} rounded-[2rem] p-4 md:p-6 shadow-sm border-2 flex flex-col h-full transition-all duration-300 text-left text-left ${sValid || bValid || rValid ? 'border-green-500 ring-4 ring-green-500/5 text-left text-left' : 'border-transparent text-left text-left'}`;
                 }
 
                 const updateInputStyle = (elId, valStr, isValid) => {
@@ -411,10 +439,10 @@
             const btnText = document.getElementById('submitBtnText');
             if (btn && btnText) {
                 if (state.selectedName) {
-                    btn.className = "w-full py-3 md:py-5 rounded-2xl md:rounded-3xl font-black text-base md:text-xl flex items-center justify-center gap-2 md:gap-3 shadow-xl bg-blue-600 text-white active:scale-95 transition-all text-left";
-                    btn.disabled = false; btnText.innerText = `確認提交回報`;
+                    btn.className = "w-full py-3 md:py-5 rounded-2xl md:rounded-3xl font-black text-base md:text-xl flex items-center justify-center gap-2 md:gap-3 shadow-xl bg-blue-600 text-white active:scale-95 transition-all text-left text-left";
+                    btn.disabled = false; btnText.innerText = `確認提交第 ${state.weekNumber} 週回報`;
                 } else {
-                    btn.className = "w-full py-3 md:py-5 rounded-2xl md:rounded-3xl font-black text-base md:text-xl flex items-center justify-center gap-2 md:gap-3 shadow-xl bg-slate-200 text-slate-400 text-left";
+                    btn.className = "w-full py-3 md:py-5 rounded-2xl md:rounded-3xl font-black text-base md:text-xl flex items-center justify-center gap-2 md:gap-3 shadow-xl bg-slate-200 text-slate-400 text-left text-left";
                     btn.disabled = true; btnText.innerText = "請選取姓名";
                 }
             }
@@ -428,7 +456,7 @@
                 const isWeekend = day.name === '週六' || day.name === '週日';
                 const tagBg = isWeekend ? 'bg-amber-200 text-amber-900' : 'bg-slate-900 text-white';
                 return `
-                    <div id="card-${idx}" class="bg-white rounded-[32px] p-6 shadow-sm border-2 border-transparent flex flex-col h-full transition-all duration-300 text-left text-left">
+                    <div id="card-${idx}" class="bg-white rounded-[2rem] p-4 md:p-6 shadow-sm border-2 border-transparent flex flex-col h-full transition-all duration-300 text-left text-left text-left">
                         <div class="flex items-center gap-3 mb-5 shrink-0 text-left text-left">
                             <div class="w-10 h-10 rounded-xl ${tagBg} flex items-center justify-center font-black text-xs shrink-0 text-left text-left">${day.name.replace('週','')}</div>
                             <div class="flex flex-col text-left text-left">
@@ -464,26 +492,36 @@
             const group = document.getElementById('resultGroupSelect').value;
             const container = document.getElementById('rankingsGrid');
             if(!container) return;
-            let participants = group === 'all' ? state.fullData : state.fullData.filter(p => p.group === group);
+            let participants = group === 'all' ? state.leaderboardData : state.leaderboardData.filter(p => p.group === group);
+            
             const getScore = (p, type) => {
                 if (week === 'overall') return Object.values(p.weeklyStats).reduce((acc, curr) => acc + (curr[type] || 0), 0);
-                else if (week === 'test_merged') return (p.weeklyStats[1] ? p.weeklyStats[1][type] : 0) + (p.weeklyStats[2] ? p.weeklyStats[2][type] : 0);
                 else return p.weeklyStats[week] ? p.weeklyStats[week][type] : 0;
             };
+
             const sports = [
                 { id: 'times', label: '🔥 勤奮王', color: 'red', unit: '次' },
                 { id: 'swim', label: '🏊 游泳排名', color: 'blue', unit: 'km' },
                 { id: 'bike', label: '🚴 騎車排名', color: 'orange', unit: 'km' },
                 { id: 'run', label: '🏃 跑步排名', color: 'green', unit: 'km' }
             ];
+
+            let hasData = false;
             container.innerHTML = sports.map(sport => {
                 const sorted = [...participants].sort((a, b) => getScore(b, sport.id) - getScore(a, sport.id)).slice(0, 3);
-                return `<div class="bg-white rounded-3xl p-5 md:p-6 shadow-sm border border-slate-100 h-full text-left"><h3 class="font-black text-slate-700 mb-4 flex items-center gap-2 border-b pb-2 italic uppercase text-left text-sm md:text-base">${sport.label}</h3><div class="space-y-2 md:space-y-3 text-left">${sorted.map((p, idx) => {
-                    const score = getScore(p, sport.id); if (score === 0) return '';
+                const validList = sorted.filter(p => getScore(p, sport.id) > 0);
+                if (validList.length > 0) hasData = true;
+
+                return `<div class="bg-white rounded-3xl p-5 md:p-6 shadow-sm border border-slate-100 h-full text-left text-left"><h3 class="font-black text-slate-700 mb-4 flex items-center gap-2 border-b pb-2 italic uppercase text-left text-sm md:text-base text-left text-left">${sport.label}</h3><div class="space-y-2 md:space-y-3 text-left text-left text-left">${validList.length > 0 ? validList.map((p, idx) => {
+                    const score = getScore(p, sport.id);
                     const medals = ['🥇', '🥈', '🥉']; const formattedScore = sport.id === 'times' ? Math.round(score) : score.toFixed(1);
-                    return `<div class="flex items-center justify-between p-3 rounded-2xl ${idx === 0 ? 'bg-yellow-50 border border-yellow-100' : 'bg-slate-50'} text-left text-left"><div class="flex items-center gap-3 text-left"><span>${medals[idx]}</span><div class="flex flex-col text-left"><span class="font-black text-slate-800 text-xs md:text-sm text-left">${p.name}</span><span class="text-[8px] md:text-[9px] font-bold text-slate-400 uppercase text-left">${p.group}</span></div></div><span class="font-black text-${sport.color}-600 text-base md:text-lg leading-none text-left">${formattedScore}<small class="text-[9px] ml-0.5 opacity-60 text-left">${sport.unit}</small></span></div>`;
-                }).join('')}</div></div>`;
+                    return `<div class="flex items-center justify-between p-3 rounded-2xl ${idx === 0 ? 'bg-yellow-50 border border-yellow-100' : 'bg-slate-50'} text-left text-left text-left text-left text-left text-left text-left"><div class="flex items-center gap-3 text-left text-left text-left text-left text-left text-left text-left"><span>${medals[idx]}</span><div class="flex flex-col text-left text-left text-left text-left text-left text-left text-left text-left"><span class="font-black text-slate-800 text-xs md:text-sm text-left text-left text-left text-left text-left text-left text-left text-left">${p.name}</span><span class="text-[8px] md:text-[9px] font-bold text-slate-400 uppercase text-left text-left text-left text-left text-left text-left text-left text-left text-left">${p.group}</span></div></div><span class="font-black text-${sport.color}-600 text-base md:text-lg leading-none text-left text-left text-left text-left text-left text-left text-left text-left text-left">${formattedScore}<small class="text-[8px] md:text-[9px] ml-0.5 opacity-60 text-left text-left text-left text-left text-left text-left text-left text-left text-left">${sport.unit}</small></span></div>`;
+                }).join('') : '<p class="text-xs text-slate-300 italic py-2 text-left">目前尚無數據</p>'}</div></div>`;
             }).join('');
+
+            if (!hasData) {
+                container.innerHTML = `<div class="col-span-full py-12 text-center text-slate-400 font-bold italic text-left">該週暫無參賽數據</div>`;
+            }
         }
 
         async function handleSubmit() {
@@ -499,7 +537,8 @@
                 await fetch(GAS_WEB_APP_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify({ userName: state.selectedName, weekNumber: state.weekNumber, days: state.days }) });
                 spinner.classList.add('hidden'); success.classList.remove('hidden');
                 lucide.createIcons(); text.innerText = "提交成功！辛苦了！";
-                await syncMemberList();
+                // 提交成功後，更新本地快取的個人數據
+                state.currentUserData.weeklyRawData[state.weekNumber] = state.days.flatMap(d => [d.swim ? d.swim/1000 : "", d.bike, d.run]);
                 await new Promise(resolve => setTimeout(resolve, 1500));
             } catch (e) { alert("提交失敗"); }
             finally { loader.classList.add('hidden'); loader.classList.remove('flex'); }
