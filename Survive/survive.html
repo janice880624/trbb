@@ -439,8 +439,9 @@
             const btnText = document.getElementById('submitBtnText');
             if (btn && btnText) {
                 if (state.selectedName) {
-                    btn.className = "w-full py-3 md:py-5 rounded-2xl md:rounded-3xl font-black text-base md:text-xl flex items-center justify-center gap-2 md:gap-3 shadow-xl bg-blue-600 text-white active:scale-95 transition-all text-left text-left";
-                    btn.disabled = false; btnText.innerText = `確認提交第 ${state.weekNumber} 週回報`;
+                    const weekLabel = state.weekNumber === 1 ? "測試週" : `第 ${state.weekNumber - 1} 週`;
+                    btn.className = "w-full py-3 md:py-5 rounded-2xl md:rounded-3xl font-black text-base md:text-xl flex items-center justify-center gap-2 md:gap-3 shadow-xl bg-blue-600 text-white active:scale-95 transition-all";
+                    btn.disabled = false; btnText.innerText = `確認提交 ${weekLabel} 回報`;
                 } else {
                     btn.className = "w-full py-3 md:py-5 rounded-2xl md:rounded-3xl font-black text-base md:text-xl flex items-center justify-center gap-2 md:gap-3 shadow-xl bg-slate-200 text-slate-400 text-left text-left";
                     btn.disabled = true; btnText.innerText = "請選取姓名";
