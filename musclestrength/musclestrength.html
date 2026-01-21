@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>TRBB 挑戰回報系統</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700;900&display=swap');
+        body { font-family: 'Noto Sans TC', sans-serif; -webkit-tap-highlight-color: transparent; }
+        
+        .custom-scroll::-webkit-scrollbar { width: 4px; }
+        .custom-scroll::-webkit-scrollbar-track { background: transparent; }
+        .custom-scroll::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
+        
+        .check-card { transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); }
+        .check-card.active { transform: scale(0.96); box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1); }
+        
+        /* 階段主題顏色 */
+        .theme-1 { --primary: #2563eb; --gradient: linear-gradient(135deg, #2563eb 0%, #1e40af 100%); --accent-text: #2563eb; }
+        .theme-2 { --primary: #ca8a04; --gradient: linear-gradient(135deg, #eab308 0%, #ca8a04 100%); --accent-text: #ca8a04; }
+        .theme-3 { --primary: #dc2626; --gradient: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); --accent-text: #dc2626; }
+        .theme-4 { --primary: #16a34a; --gradient: linear-gradient(135deg, #22c55e 0%, #16a34a 100%); --accent-text: #16a34a; }
+        .theme-5 { --primary: #9333ea; --gradient: linear-gradient(135deg, #a855f7 0%, #9333ea 100%); --accent-text: #9333ea; }
+
+        .dynamic-bg { background: var(--gradient); }
+        .dynamic-text { color: var(--primary); }
+        .active-card { background: var(--gradient) !important; color: white !important; border-color: transparent !important; }
+        
+        .goal-reached-bg { background: linear-gradient(135deg, #10b981 0%, #059669 100%) !important; }
+        
+        @keyframes pulse-soft {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.02); opacity: 0.9; }
+        }
+        .goal-animation { animation: pulse-soft 2s infinite; }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-900 pb-40 transition-all duration-500 theme-1" id="appBody">
+
+    <script>
+        // --- ⚠️ 重要：請確認此處為最新的 GAS 部署網址 ---
+        const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxjFboMEm57dfFB6a9f9M9czPtWvOVLTg-BT-ppp_HHkuJjPHN0FxqMh_aVq1jA-xeh/exec";
+
+        const STAGE_CONFIG = {
+            1: { name: "第 1–2 週", action: "棒式", start: "2026/01/12", icon: "award" },
+            2: { name: "第 3–4 週", action: "深蹲", start: "2026/01/26", icon: "award" },
+            3: { name: "第 5–6 週", action: "伏地挺身", start: "2026/02/09", icon: "zap" },
+            4: { name: "第 7–8 週", action: "單邊棒式", start: "2026/02/23", icon: "shield" },
+            5: { name: "第 9–10 週", action: "全身整合", start: "2026/03/09", icon: "activity" }
+        };
+
+        const WEEK_DAYS = ['週日', '週一', '週二', '週三', '週四', '週五', '週六'];
+        const GOAL_COUNT = 4;
+
+        let state = {
+            activeTab: 'report',
+            memberList: [],
+            groups: [],
+            selectedGroup: null,
+            selectedName: '',
+            stage: 1,
+            leaderboardStage: 1,
+            reports: Array(14).fill(0),
+            syncStatus: 'loading', 
+            dataSyncing: false,
+            loading: false,
+            leaderboard: [],
+            errorMessage: ''
+        };
+    </script>
+
+    <!-- Header -->
+    <nav class="bg-white border-b sticky top-0 z-40 px-4 py-3 shadow-sm flex items-center justify-between h-14">
+        <div class="flex items-center gap-2">
+            <i data-lucide="award" class="w-5 h-5 dynamic-text" id="headerIcon"></i>
+            <span class="font-black text-xs md:text-sm uppercase tracking-tight italic">TRBB 挑戰回報系統</span>
+        </div>
+        <div class="flex gap-2">
+            <button onclick="switchTab('report')" id="tab-report" class="px-4 py-1.5 rounded-xl text-xs font-black transition-all bg-blue-600 text-white shadow-md">回報</button>
+            <button onclick="switchTab('results')" id="tab-results" class="px-4 py-1.5 rounded-xl text-xs font-black transition-all bg-slate-100 text-slate-400">榜單</button>
+        </div>
+    </nav>
+
+    <!-- 回報頁面 -->
+    <main id="page-report" class="max-w-5xl mx-auto p-4 space-y-4">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div class="md:col-span-1 space-y-3">
+                <div class="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm">
+                    <label class="text-[10px] font-bold text-slate-400 uppercase mb-1 block tracking-wider font-black">挑戰階段</label>
+                    <select id="stageSelect" onchange="handleStageChange(this.value)" class="w-full bg-transparent font-black text-slate-800 outline-none text-sm cursor-pointer">
+                        <option value="1">第 1–2 週 (棒式)</option>
+                        <option value="2">第 3–4 週 (深蹲)</option>
+                        <option value="3">第 5–6 週 (伏地挺身)</option>
+                        <option value="4">第 7–8 週 (單邊棒式)</option>
+                        <option value="5">第 9–10 週 (全身整合)</option>
+                    </select>
+                </div>
+                <!-- 姓名卡片：點擊開啟 Modal -->
+                <div onclick="openNameModal()" id="userNameCard" class="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm cursor-pointer active:bg-slate-50 min-h-[72px] flex flex-col justify-center relative transition-all">
+                    <label class="text-[10px] font-bold text-slate-400 uppercase mb-1 block tracking-wider font-black">選手姓名</label>
+                    <span id="displayUserName" class="font-black text-sm truncate text-slate-300 italic">選取選手...</span>
+                    <i data-lucide="chevron-right" class="absolute right-4 top-1/2 -translate-y-1/2 text-slate-200 w-5 h-5"></i>
+                </div>
+            </div>
+
+            <div class="md:col-span-2">
+                <section id="statusPanel" class="rounded-[28px] p-6 shadow-xl text-white dynamic-bg flex items-center justify-between transition-all duration-500">
+                    <div>
+                        <p id="panelActionLabel" class="text-white/50 text-[10px] font-bold tracking-widest uppercase font-black">本階段任務</p>
+                        <div class="flex items-baseline gap-2 mt-1">
+                            <h2 id="totalCount" class="text-6xl font-black italic">0</h2>
+                            <span class="text-sm font-bold opacity-40 uppercase">/ 4 次達標</span>
+                        </div>
+                        <p id="goalStatusText" class="text-[11px] font-bold mt-2 bg-black/20 px-3 py-1 rounded-full inline-block">請先選取選手</p>
+                    </div>
+                    <i id="panelIcon" data-lucide="award" class="w-16 h-16 opacity-20"></i>
+                </section>
+            </div>
+        </div>
+
+        <div class="pt-2 relative">
+            <h3 class="text-xs font-black text-slate-400 mb-3 ml-1 uppercase flex items-center gap-2">
+                <i data-lucide="calendar" class="w-3 h-3"></i> 挑戰進度 (點擊打勾)
+            </h3>
+            <div id="dataSyncOverlay" class="absolute inset-0 bg-slate-50/60 backdrop-blur-[1.5px] z-10 hidden items-center justify-center rounded-2xl">
+                <div class="bg-white px-5 py-3 rounded-full shadow-lg border flex items-center gap-3 font-black text-xs italic text-slate-500">正在同步雲端數據...</div>
+            </div>
+            <div id="daysGrid" class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3"></div>
+        </div>
+    </main>
+
+    <!-- 英雄榜頁面 -->
+    <main id="page-results" class="hidden max-w-2xl mx-auto p-4 space-y-6">
+        <div class="bg-white p-5 rounded-[28px] border border-slate-100 shadow-sm space-y-4">
+            <div class="flex items-center justify-between">
+                <h2 class="font-black text-xl italic text-slate-800">RANKING 英雄榜</h2>
+                <i data-lucide="trophy" class="text-yellow-500 w-6 h-6"></i>
+            </div>
+            <div>
+                <label class="text-[10px] font-black text-slate-400 uppercase mb-1 block">查看週次戰績</label>
+                <select id="leaderboardStageSelect" onchange="handleLeaderboardStageChange(this.value)" class="w-full bg-slate-50 p-3 rounded-xl font-black text-slate-700 outline-none text-sm cursor-pointer border-2 border-transparent focus:border-blue-500 transition-all">
+                    <option value="1">第一階段：第 1–2 週</option>
+                    <option value="2">第二階段：第 3–4 週</option>
+                    <option value="3">第三階段：第 5–6 週</option>
+                    <option value="4">第四階段：第 7–8 週</option>
+                    <option value="5">第五階段：第 9–10 週</option>
+                </select>
+            </div>
+        </div>
+        <div id="leaderboardList" class="space-y-3 min-h-[300px]"></div>
+    </main>
+
+    <!-- 底部提交按鈕 -->
+    <div id="submitBar" class="fixed bottom-0 left-0 right-0 p-4 bg-white/80 backdrop-blur-xl border-t z-50">
+        <div class="max-w-md mx-auto">
+            <button onclick="handleSubmit()" id="submitBtn" class="w-full py-4 rounded-2xl font-black text-lg flex items-center justify-center gap-2 bg-slate-200 text-slate-400 transition-all shadow-lg" disabled>
+                <i data-lucide="send" id="btnIcon" class="w-5 h-5"></i>
+                <span id="submitBtnText">請先選取選手</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- 姓名選擇器 Modal -->
+    <div id="nameModal" class="fixed inset-0 bg-black/60 z-[100] hidden items-center justify-center p-4 backdrop-blur-sm">
+        <div class="bg-white w-full max-w-md rounded-[32px] max-h-[80vh] flex flex-col overflow-hidden shadow-2xl transition-all scale-95 opacity-0" id="modalContainer">
+            <div class="p-6 border-b flex flex-col gap-1">
+                <div class="flex justify-between items-center">
+                    <h3 id="modalTitle" class="font-black text-xl italic text-slate-800">選擇組別</h3>
+                    <button onclick="closeNameModal()" class="p-2 bg-slate-100 rounded-full hover:bg-slate-200 transition-colors"><i data-lucide="x" class="w-5 h-5 text-slate-500"></i></button>
+                </div>
+                <div id="modalBreadcrumb" class="hidden items-center gap-2 text-[10px] font-black text-blue-600 uppercase cursor-pointer hover:underline" onclick="resetSelection()">
+                    <i data-lucide="chevron-left" class="w-3 h-3"></i> 返回選組
+                </div>
+            </div>
+            <div id="selectionList" class="overflow-y-auto p-4 flex-1 custom-scroll min-h-[300px] space-y-2"></div>
+        </div>
+    </div>
+
+    <!-- 全螢幕遮罩 -->
+    <div id="loader" class="fixed inset-0 bg-black/40 backdrop-blur-[2px] z-[200] hidden items-center justify-center">
+        <div class="bg-white rounded-[28px] p-10 flex flex-col items-center">
+            <div class="w-12 h-12 border-4 border-slate-200 border-t-blue-600 rounded-full animate-spin"></div>
+            <p id="loaderText" class="mt-4 font-black text-slate-800 italic">處理中...</p>
+        </div>
+    </div>
+
+    <script>
+        window.onload = async () => { 
+            lucide.createIcons(); 
+            handleStageChange(1); 
+            await fetchMembers(); // 先抓名單
+            applyRememberedUser(); // 再套用記憶的選手
+        };
+
+        function switchTab(tab) {
+            state.activeTab = tab;
+            document.getElementById('page-report').classList.toggle('hidden', tab !== 'report');
+            document.getElementById('page-results').classList.toggle('hidden', tab !== 'results');
+            document.getElementById('submitBar').classList.toggle('hidden', tab !== 'report');
+            const btnR = document.getElementById('tab-report'); const btnL = document.getElementById('tab-results');
+            if(tab === 'report') {
+                btnR.className = "px-4 py-1.5 rounded-xl text-xs font-black transition-all bg-blue-600 text-white shadow-md";
+                btnL.className = "px-4 py-1.5 rounded-xl text-xs font-black transition-all bg-slate-100 text-slate-400";
+            } else {
+                btnL.className = "px-4 py-1.5 rounded-xl text-xs font-black transition-all bg-blue-600 text-white shadow-md";
+                btnR.className = "px-4 py-1.5 rounded-xl text-xs font-black transition-all bg-slate-100 text-slate-400";
+                document.getElementById('leaderboardStageSelect').value = state.stage;
+                fetchLeaderboard(state.stage);
+            }
+            lucide.createIcons();
+        }
+
+        function handleStageChange(val) {
+            state.stage = parseInt(val);
+            const cfg = STAGE_CONFIG[state.stage];
+            document.getElementById('appBody').className = `bg-slate-50 text-slate-900 pb-40 transition-all duration-500 theme-${state.stage}`;
+            document.getElementById('headerIcon').setAttribute('data-lucide', cfg.icon);
+            document.getElementById('panelIcon').setAttribute('data-lucide', cfg.icon);
+            document.getElementById('panelActionLabel').innerText = `本階段任務：${cfg.action}`;
+            
+            if (state.selectedName) {
+                fetchUserData(state.selectedName, state.stage);
+            } else {
+                state.reports = Array(14).fill(0);
+                renderDays();
+                updateUI();
+            }
+            lucide.createIcons();
+        }
+
+        function handleLeaderboardStageChange(val) {
+            state.leaderboardStage = parseInt(val);
+            fetchLeaderboard(state.leaderboardStage);
+        }
+
+        function renderDays() {
+            const container = document.getElementById('daysGrid');
+            const cfg = STAGE_CONFIG[state.stage];
+            const startD = new Date(cfg.start);
+            let h = '';
+            for (let i = 0; i < 14; i++) {
+                const d = new Date(startD); d.setDate(d.getDate() + i);
+                const isAct = state.reports[i] === 1;
+                h += `<div onclick="toggleDay(${i})" class="check-card flex flex-col items-center justify-center p-4 rounded-2xl border-2 cursor-pointer ${isAct ? 'active-card shadow-lg' : 'bg-white border-slate-100 hover:border-slate-300'}">
+                    <span class="text-[9px] font-black uppercase mb-1 ${isAct ? 'text-white/60' : 'text-slate-400'}">Day ${i+1}</span>
+                    <span class="text-[20px] font-black mb-1">${d.getMonth()+1}/${d.getDate()}</span>
+                    <span class="text-[10px] font-bold mb-2 ${isAct ? 'text-white/80' : 'text-slate-500'}">(${WEEK_DAYS[d.getDay()]})</span>
+                    <div class="w-6 h-6 rounded-full flex items-center justify-center border-2 ${isAct ? 'border-white' : 'border-slate-200'}">${isAct ? '<i data-lucide="check" class="w-3.5 h-3.5"></i>' : ''}</div></div>`;
+            }
+            container.innerHTML = h; lucide.createIcons();
+        }
+
+        function toggleDay(i) { 
+            if (state.dataSyncing || !state.selectedName) return; 
+            state.reports[i] = state.reports[i] === 1 ? 0 : 1; 
+            renderDays(); 
+            updateUI(); 
+        }
+
+        function updateUI() {
+            const count = state.reports.reduce((a, b) => a + b, 0);
+            document.getElementById('totalCount').innerText = count;
+            const btn = document.getElementById('submitBtn'); 
+            const btnText = document.getElementById('submitBtnText');
+            const disp = document.getElementById('displayUserName'); 
+            const gText = document.getElementById('goalStatusText'); 
+            const pan = document.getElementById('statusPanel');
+            
+            if (state.selectedName) {
+                btn.disabled = state.dataSyncing || state.loading;
+                btn.className = `w-full py-4 rounded-2xl font-black text-lg flex items-center justify-center gap-2 shadow-lg transition-all dynamic-bg text-white ${state.dataSyncing ? 'opacity-50 cursor-not-allowed' : ''}`;
+                btnText.innerText = state.dataSyncing ? '讀取雲端中...' : `更新回報 (${STAGE_CONFIG[state.stage].action})`;
+                disp.innerText = `${state.selectedGroup} - ${state.selectedName}`; 
+                disp.className = "font-black text-sm truncate dynamic-text";
+                
+                if (count >= GOAL_COUNT) { 
+                    gText.innerHTML = `✨ 已達標 (${count}/4)`; 
+                    gText.className = "text-[11px] font-black mt-2 bg-white text-emerald-600 px-3 py-1 rounded-full inline-block shadow-sm goal-animation"; pan.classList.add('goal-reached-bg'); 
+                } else { 
+                    gText.innerHTML = `還差 ${GOAL_COUNT - count} 次達標`; 
+                    gText.className = "text-[11px] font-bold mt-2 bg-black/20 text-white px-3 py-1 rounded-full inline-block"; pan.classList.remove('goal-reached-bg'); 
+                }
+            } else { 
+                btn.disabled = true; 
+                btn.className = "w-full py-4 rounded-2xl font-black text-lg flex items-center justify-center gap-2 bg-slate-200 text-slate-400";
+                btnText.innerText = "請先選取選手";
+                disp.innerText = "選取選手...";
+                disp.className = "font-black text-sm truncate text-slate-300 italic"; 
+                gText.innerText = "選擇選手後顯示進度";
+                pan.classList.remove('goal-reached-bg'); 
+            }
+        }
+
+        async function fetchMembers() {
+            state.syncStatus = 'loading';
+            try { 
+                const r = await fetch(`${GAS_WEB_APP_URL}?action=members&t=${Date.now()}`); 
+                const d = await r.json(); 
+                if (d && Array.isArray(d)) { 
+                    state.memberList = d; 
+                    state.groups = [...new Set(d.map(m => m.group))].sort(); 
+                    state.syncStatus = 'success';
+                } else if (d.error) {
+                    state.syncStatus = 'error';
+                    state.errorMessage = d.error;
+                }
+            } catch (e) { 
+                state.syncStatus = 'error';
+                state.errorMessage = "連線失敗，請檢查 GAS 網址與權限";
+            }
+        }
+
+        async function fetchUserData(n, s) {
+            state.dataSyncing = true; 
+            document.getElementById('dataSyncOverlay').classList.remove('hidden'); 
+            document.getElementById('dataSyncOverlay').classList.add('flex'); 
+            updateUI();
+            try { 
+                const r = await fetch(`${GAS_WEB_APP_URL}?action=getUserData&name=${encodeURIComponent(n)}&stage=${s}&t=${Date.now()}`); 
+                const d = await r.json(); 
+                state.reports = d.reports || Array(14).fill(0); 
+            } catch (e) { 
+                state.reports = Array(14).fill(0); 
+            } finally { 
+                state.dataSyncing = false; 
+                document.getElementById('dataSyncOverlay').classList.add('hidden'); 
+                renderDays(); 
+                updateUI(); 
+            }
+        }
+
+        async function fetchLeaderboard(targetStage) {
+            const list = document.getElementById('leaderboardList');
+            list.innerHTML = `<div class="py-20 flex flex-col items-center gap-3"><div class="w-8 h-8 border-2 border-slate-200 border-t-blue-600 rounded-full animate-spin"></div><p class="text-xs font-black text-slate-400">正在同步戰績...</p></div>`;
+            try {
+                const r = await fetch(`${GAS_WEB_APP_URL}?action=getLeaderboard&stage=${targetStage}&t=${Date.now()}`);
+                const data = await r.json();
+                if (data && data.length > 0) {
+                    list.innerHTML = data.map((item, idx) => {
+                        const rank = idx + 1;
+                        let icon = `<div class="w-8 h-8 flex items-center justify-center font-black text-slate-300 text-sm">${rank}</div>`;
+                        if (rank === 1) icon = `<div class="w-8 h-8 bg-yellow-400 rounded-full flex items-center justify-center shadow-lg"><i data-lucide="crown" class="w-4 h-4 text-white"></i></div>`;
+                        else if (rank === 2) icon = `<div class="w-8 h-8 bg-slate-300 rounded-full flex items-center justify-center shadow-md"><i data-lucide="award" class="w-4 h-4 text-white"></i></div>`;
+                        else if (rank === 3) icon = `<div class="w-8 h-8 bg-orange-300 rounded-full flex items-center justify-center shadow-sm"><i data-lucide="medal" class="w-4 h-4 text-white"></i></div>`;
+                        const isG = item.count >= GOAL_COUNT;
+                        return `<div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-4 transition-all hover:scale-[1.01]">${icon}<div class="flex-1 min-w-0"><div class="flex justify-between items-center mb-1"><span class="font-black text-slate-800 truncate text-sm">${item.name} 
+                            <span class="text-[9px] text-slate-400 ml-1 font-bold">${item.group}</span></span>
+                            <span class="text-xs font-black ${isG ? 'text-emerald-500' : 'text-blue-600'} italic font-black">${item.count} 次</span>
+                            </div><div class="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden"><div class="h-full transition-all duration-1000 ${isG ? 'bg-emerald-500 shadow-sm' : 'bg-blue-500'}" style="width: ${(item.count/14)*100}%"></div></div></div></div>`;
+                    }).join('');
+                    lucide.createIcons();
+                } else { list.innerHTML = `<p class="py-20 text-center font-black text-slate-400 italic">該階段尚無紀錄</p>`; }
+            } catch (e) { list.innerHTML = `<p class="py-20 text-center text-red-400 font-black">讀取失敗</p>`; }
+        }
+
+        function renderSelection() {
+            const list = document.getElementById('selectionList'); const b = document.getElementById('modalBreadcrumb');
+            if (state.syncStatus === 'loading') {
+                list.innerHTML = `<div class="py-20 text-center font-black text-slate-400">正在載入雲端名單...</div>`;
+                return;
+            }
+            if (state.syncStatus === 'error') {
+                list.innerHTML = `<div class="p-6 bg-red-50 text-red-500 rounded-2xl text-xs font-bold leading-relaxed">錯誤：${state.errorMessage}<br><br>請確認 GAS 部署為「所有人」，且試算表分頁名為「工作表1」。</div>`;
+                return;
+            }
+            if (!state.selectedGroup) {
+                document.getElementById('modalTitle').innerText = "第一步：選擇組別"; b.classList.add('hidden');
+                list.innerHTML = state.groups.map(g => `<div onclick="selectGroup('${g}')" class="p-4 bg-slate-50 rounded-2xl mb-2 cursor-pointer font-black text-slate-700 flex justify-between items-center group active:bg-slate-100 transition-colors"><span>${g}</span><i data-lucide="chevron-right" class="w-4 h-4 text-slate-300"></i></div>`).join('');
+            } else {
+                document.getElementById('modalTitle').innerText = "第二步：選擇姓名"; b.classList.remove('hidden'); b.classList.add('flex');
+                list.innerHTML = state.memberList.filter(m => m.group === state.selectedGroup).map(m => `<div onclick="selectName('${m.name.replace(/'/g, "\\'")}', '${m.group.replace(/'/g, "\\'")}')" class="p-4 rounded-2xl mb-2 cursor-pointer transition-all ${state.selectedName === m.name ? 'bg-blue-50 ring-2 ring-blue-500' : 'bg-slate-50'} font-black text-slate-700 flex justify-between items-center"><span>${m.name}</span>${state.selectedName === m.name ? '<i data-lucide="check" class="w-4 h-4 text-blue-500"></i>' : '<i data-lucide="user" class="w-4 h-4 text-slate-300"></i>'}</div>`).join('');
+            }
+            lucide.createIcons();
+        }
+
+        function selectGroup(g) { state.selectedGroup = g; renderSelection(); }
+        function resetSelection() { state.selectedGroup = null; renderSelection(); }
+        function selectName(n, g) { 
+            state.selectedName = n; 
+            state.selectedGroup = g; 
+            localStorage.setItem('trbb_user', JSON.stringify({name: n, group: g})); 
+            closeNameModal(); 
+            fetchUserData(n, state.stage); 
+        }
+        function openNameModal() { document.getElementById('nameModal').classList.remove('hidden'); document.getElementById('nameModal').classList.add('flex'); setTimeout(() => { document.getElementById('modalContainer').classList.remove('scale-95', 'opacity-0'); document.getElementById('modalContainer').classList.add('scale-100', 'opacity-100'); }, 10); renderSelection(); }
+        function closeNameModal() { document.getElementById('modalContainer').classList.add('scale-95', 'opacity-0'); setTimeout(() => { document.getElementById('nameModal').classList.add('hidden'); }, 200); }
+        
+        function applyRememberedUser() { 
+            const saved = localStorage.getItem('trbb_user'); 
+            if (saved) { 
+                try {
+                    const { name, group } = JSON.parse(saved); 
+                    // 確認記憶的名字在目前抓到的名單中
+                    if (state.memberList.some(m => m.name === name)) {
+                        state.selectedName = name; state.selectedGroup = group; 
+                        updateUI(); fetchUserData(name, state.stage); 
+                    }
+                } catch(e) {}
+            } 
+        }
+
+        async function handleSubmit() {
+            if (!state.selectedName || state.dataSyncing || state.loading) return;
+            const loader = document.getElementById('loader'); const text = document.getElementById('loaderText'); state.loading = true; updateUI();
+            loader.classList.remove('hidden'); loader.classList.add('flex'); text.innerText = "資料更新中...";
+            const total = state.reports.reduce((a, b) => a + b, 0);
+            try { 
+                await fetch(GAS_WEB_APP_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify({ userName: state.selectedName, stage: state.stage, data: state.reports, total: total }) }); 
+                text.innerText = "提交成功！"; 
+                setTimeout(() => { loader.classList.add('hidden'); }, 1500); 
+            } catch (e) { 
+                alert("提交失敗"); loader.classList.add('hidden'); 
+            } finally { 
+                state.loading = false; updateUI(); 
+            }
+        }
+    </script>
+</body>
+</html>
