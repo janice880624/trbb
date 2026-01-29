@@ -32,8 +32,12 @@
             border-bottom: 1px solid #e5e7eb;
             transition: background-color 0.2s;
         }
-        .day-cell:last-child { border-right: none; }
         
+        /* 修復：只有每一排的第 7 個（週日）才不顯示右邊框，避免與外框重複 */
+        .day-cell:nth-child(7n) {
+            border-right: none;
+        }
+
         .event-dot {
             width: 8px;
             height: 8px;
@@ -45,13 +49,14 @@
         .is-past { background-color: #f9fafb; }
         .is-past-text { color: #d1d5db !important; }
 
-        /* Google 配色 */
+        /* Google 配色定義 */
         .event-google-blue { background-color: #4285F4; }
         .event-google-green { background-color: #34A853; }
         .event-google-yellow { background-color: #FBBC05; }
         .event-google-red { background-color: #EA4335; }
+        .event-google-purple { background-color: #c635ea; }
+        .event-google-amber { background-color: #bd5b19; } 
 
-        /* 確保對齊 */
         .scroll-sync-container {
             scrollbar-gutter: stable;
         }
@@ -67,7 +72,7 @@
 <body class="bg-gray-50 text-gray-800">
 
     <div class="flex flex-col md:flex-row md:h-screen overflow-hidden">
-        <!-- 左側邊欄 (電腦版顯示) -->
+        <!-- 左側邊欄 (電腦版) -->
         <aside class="w-full md:w-64 flex-shrink-0 bg-white border-b md:border-r border-gray-200 p-6 overflow-y-auto hidden md:block">
             <h1 class="text-2xl font-bold text-gray-800 mb-8 flex items-center gap-2">
                 TRBB 行事曆
@@ -75,102 +80,114 @@
             <h2 class="text-sm font-semibold text-gray-500 uppercase tracking-widest mb-4">活動類型</h2>
             <div id="event-filter" class="space-y-3">
                 <label class="flex items-center space-x-3 cursor-pointer group">
-                    <input type="checkbox" data-event-type="TRBB" class="form-checkbox h-5 w-5 text-blue-600 rounded border-gray-300 focus:ring-blue-500" checked>
+                    <input type="checkbox" data-event-type="TRBB" class="form-checkbox h-5 w-5 text-blue-600 rounded" checked>
                     <span class="event-dot event-google-blue"></span>
-                    <span class="text-sm group-hover:text-blue-600 transition-colors">TRBB 專屬活動</span>
+                    <span class="text-sm">TRBB 專屬活動</span>
                 </label>
                 <label class="flex items-center space-x-3 cursor-pointer group">
-                    <input type="checkbox" data-event-type="sign" class="form-checkbox h-5 w-5 text-red-600 rounded border-gray-300 focus:ring-red-500" checked>
+                    <input type="checkbox" data-event-type="sign" class="form-checkbox h-5 w-5 text-red-600 rounded" checked>
                     <span class="event-dot event-google-red"></span>
-                    <span class="text-sm group-hover:text-red-600 transition-colors">團報提醒</span>
+                    <span class="text-sm">團報提醒</span>
                 </label>
                 <label class="flex items-center space-x-3 cursor-pointer group">
-                    <input type="checkbox" data-event-type="competition" class="form-checkbox h-5 w-5 text-yellow-600 rounded border-gray-300 focus:ring-yellow-500" checked>
+                    <input type="checkbox" data-event-type="triathlon" class="form-checkbox h-5 w-5 text-green-600 rounded" checked>
+                    <span class="event-dot event-google-green"></span>
+                    <span class="text-sm">三鐵競賽</span>
+                </label>
+                <label class="flex items-center space-x-3 cursor-pointer group">
+                    <input type="checkbox" data-event-type="Swim" class="form-checkbox h-5 w-5 text-purple-600 rounded" checked>
+                    <span class="event-dot event-google-purple"></span>
+                    <span class="text-sm">游泳競賽</span>
+                </label>
+                <label class="flex items-center space-x-3 cursor-pointer group">
+                    <input type="checkbox" data-event-type="Bike" class="form-checkbox h-5 w-5 text-yellow-600 rounded" checked>
                     <span class="event-dot event-google-yellow"></span>
-                    <span class="text-sm group-hover:text-yellow-600 transition-colors">三鐵競賽</span>
+                    <span class="text-sm">腳踏車競賽</span>
+                </label>
+                <label class="flex items-center space-x-3 cursor-pointer group">
+                    <input type="checkbox" data-event-type="Run" class="form-checkbox h-5 w-5 text-amber-600 rounded" checked>
+                    <span class="event-dot event-google-amber"></span>
+                    <span class="text-sm">跑步競賽</span>
                 </label>
             </div>
         </aside>
 
-        <!-- 主要內容 -->
         <main class="flex-1 flex flex-col min-w-0 bg-white">
-            <!-- 頂部置頂導覽列 (手機版變色且置頂) -->
-            <header class="sticky top-0 z-30 flex flex-col md:flex-row md:items-center justify-between p-4 md:p-8 border-b border-gray-200 transition-colors bg-blue-500 md:bg-white text-white md:text-gray-800 shadow-md md:shadow-none">
-                <!-- 手機版專屬標題 (電腦版隱藏) -->
+            <header class="sticky top-0 z-30 flex flex-col md:flex-row md:items-center justify-between p-4 md:p-8 border-b border-gray-200 bg-blue-500 md:bg-white text-white md:text-gray-800 shadow-md md:shadow-none">
                 <div class="flex items-center justify-between mb-2 md:mb-0 md:hidden">
-                   <div class="flex items-center gap-2">
-                        <h1 class="text-lg font-bold">TRBB 行事曆</h1>
-                   </div>
-                   <button id="today-btn-mobile" class="px-3 py-1 text-xs font-bold bg-white/20 border border-white/30 rounded-md hover:bg-white/30 transition-all">今天</button>
+                    <h1 class="text-lg font-bold">TRBB 行事曆</h1>
+                    <button id="today-btn-mobile" class="px-3 py-1 text-xs font-bold bg-white/20 border border-white/30 rounded-md">今天</button>
                 </div>
 
-                <!-- 月份切換與功能鈕 -->
                 <div class="flex items-center justify-between md:justify-start md:space-x-4">
                     <div class="flex items-center space-x-1 md:space-x-4">
-                        <button id="prev-month" class="p-2 rounded-full hover:bg-white/10 md:hover:bg-gray-100 transition-colors">
+                        <button id="prev-month" class="p-2 rounded-full hover:bg-white/10 md:hover:bg-gray-100">
                             <svg class="w-5 h-5 md:w-6 md:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="2.5" d="M15 19l-7-7 7-7"></path></svg>
                         </button>
                         <h2 id="current-month-year" class="text-lg md:text-2xl font-bold min-w-[120px] md:min-w-[140px] text-center"></h2>
-                        <button id="next-month" class="p-2 rounded-full hover:bg-white/10 md:hover:bg-gray-100 transition-colors">
+                        <button id="next-month" class="p-2 rounded-full hover:bg-white/10 md:hover:bg-gray-100">
                             <svg class="w-5 h-5 md:w-6 md:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="2.5" d="M9 5l7 7-7 7"></path></svg>
                         </button>
                     </div>
-                    <button id="today-btn" class="hidden md:block px-6 py-2 text-sm font-bold bg-white border border-gray-300 rounded-lg hover:bg-gray-50 text-gray-700 shadow-sm transition-all">今天</button>
+                    <button id="today-btn" class="hidden md:block px-6 py-2 text-sm font-bold bg-white border border-gray-300 rounded-lg hover:bg-gray-50 text-gray-700 shadow-sm">今天</button>
                 </div>
 
-                <!-- 手機版篩選切換按鈕 (簡化設計) -->
-                <div class="md:hidden mt-3 flex gap-2 overflow-x-auto no-scrollbar pb-1">
-                    <label class="flex-shrink-0 flex items-center gap-1.5 bg-white/10 px-3 py-1.5 rounded-full text-[10px] font-bold border border-white/20">
-                        <input type="checkbox" data-event-type="TRBB" class="form-checkbox h-3 w-3 text-blue-400 rounded-full bg-transparent border-white/50" checked> TRBB
+                <!-- 手機版頂部篩選器 -->
+                <div id="mobile-filter" class="md:hidden mt-3 flex gap-2 overflow-x-auto no-scrollbar pb-1">
+                    <label class="flex-shrink-0 flex items-center gap-1 bg-white/10 px-3 py-1.5 rounded-full text-[10px] font-bold border border-white/20">
+                        <input type="checkbox" data-event-type="TRBB" checked> TRBB
                     </label>
-                    <label class="flex-shrink-0 flex items-center gap-1.5 bg-white/10 px-3 py-1.5 rounded-full text-[10px] font-bold border border-white/20">
-                        <input type="checkbox" data-event-type="sign" class="form-checkbox h-3 w-3 text-red-400 rounded-full bg-transparent border-white/50" checked> 團報
+                    <label class="flex-shrink-0 flex items-center gap-1 bg-white/10 px-3 py-1.5 rounded-full text-[10px] font-bold border border-white/20">
+                        <input type="checkbox" data-event-type="sign" checked> 團報提醒
                     </label>
-                    <label class="flex-shrink-0 flex items-center gap-1.5 bg-white/10 px-3 py-1.5 rounded-full text-[10px] font-bold border border-white/20">
-                        <input type="checkbox" data-event-type="competition" class="form-checkbox h-3 w-3 text-yellow-400 rounded-full bg-transparent border-white/50" checked> 競賽
+                    <label class="flex-shrink-0 flex items-center gap-1 bg-white/10 px-3 py-1.5 rounded-full text-[10px] font-bold border border-white/20">
+                        <input type="checkbox" data-event-type="triathlon" checked> 三鐵
+                    </label>
+                    <label class="flex-shrink-0 flex items-center gap-1 bg-white/10 px-3 py-1.5 rounded-full text-[10px] font-bold border border-white/20">
+                        <input type="checkbox" data-event-type="Swim" checked> 游泳
+                    </label>
+                    <label class="flex-shrink-0 flex items-center gap-1 bg-white/10 px-3 py-1.5 rounded-full text-[10px] font-bold border border-white/20">
+                        <input type="checkbox" data-event-type="Bike" checked> 單車
+                    </label>
+                    <label class="flex-shrink-0 flex items-center gap-1 bg-white/10 px-3 py-1.5 rounded-full text-[10px] font-bold border border-white/20">
+                        <input type="checkbox" data-event-type="Run" checked> 跑步
                     </label>
                 </div>
             </header>
 
-            <!-- 電腦版星期標頭 -->
             <div class="hidden md:block bg-gray-50 border-b border-gray-200">
-                <div class="calendar-grid border-l border-gray-200">
-                    <div class="text-center py-3 text-xs font-bold text-gray-400 uppercase tracking-widest border-r border-gray-200">週一</div>
-                    <div class="text-center py-3 text-xs font-bold text-gray-400 uppercase tracking-widest border-r border-gray-200">週二</div>
-                    <div class="text-center py-3 text-xs font-bold text-gray-400 uppercase tracking-widest border-r border-gray-200">週三</div>
-                    <div class="text-center py-3 text-xs font-bold text-gray-400 uppercase tracking-widest border-r border-gray-200">週四</div>
-                    <div class="text-center py-3 text-xs font-bold text-gray-400 uppercase tracking-widest border-r border-gray-200">週五</div>
-                    <div class="text-center py-3 text-xs font-bold text-blue-500 uppercase tracking-widest border-r border-gray-200">週六</div>
-                    <div class="text-center py-3 text-xs font-bold text-red-500 uppercase tracking-widest">週日</div>
+                <div class="calendar-grid">
+                    <div class="text-center py-3 text-xs font-bold text-gray-400">週一</div>
+                    <div class="text-center py-3 text-xs font-bold text-gray-400">週二</div>
+                    <div class="text-center py-3 text-xs font-bold text-gray-400">週三</div>
+                    <div class="text-center py-3 text-xs font-bold text-gray-400">週四</div>
+                    <div class="text-center py-3 text-xs font-bold text-gray-400">週五</div>
+                    <div class="text-center py-3 text-xs font-bold text-blue-500">週六</div>
+                    <div class="text-center py-3 text-xs font-bold text-red-500">週日</div>
                 </div>
             </div>
 
-            <!-- 行事曆主體 -->
-            <div id="calendar-body-container" class="flex-1 overflow-y-auto scroll-sync-container">
-                <div id="calendar-body" class="hidden md:grid calendar-grid border-l border-gray-200 bg-white"></div>
-                <!-- 手機版列表 (加入 padding 防止被置頂列遮擋) -->
+            <div id="calendar-body-container" class="flex-1 overflow-y-auto">
+                <div id="calendar-body" class="hidden md:grid calendar-grid bg-white"></div>
                 <div id="calendar-list-view" class="md:hidden space-y-3 p-3 bg-gray-50 min-h-full"></div>
             </div>
         </main>
     </div>
 
-    <!-- 活動詳情 Modal -->
+    <!-- 詳情視窗 (Modal) -->
     <div id="event-modal" class="fixed inset-0 bg-black/50 z-50 hidden items-center justify-center p-4 backdrop-blur-sm">
-        <div class="bg-white rounded-2xl shadow-2xl p-6 md:p-8 w-full max-w-md relative animate-in zoom-in duration-200">
-            <button id="modal-close-btn" class="absolute top-5 right-5 text-gray-400 hover:text-gray-800 text-2xl transition-colors">×</button>
+        <div class="bg-white rounded-2xl shadow-2xl p-6 md:p-8 w-full max-w-md relative">
+            <button id="modal-close-btn" class="absolute top-5 right-5 text-gray-400 hover:text-gray-800 text-2xl">×</button>
             <h3 id="modal-title" class="text-xl md:text-2xl font-bold mb-6 text-gray-900 leading-tight"></h3>
-            <div id="modal-info-section" class="space-y-4 text-gray-600 text-sm">
-                <div class="flex items-end" id="modal-date-row"><span class="w-12 font-bold text-gray-400 uppercase text-[16px] mt-1 shrink-0">日期</span><span id="modal-date" class="font-medium text-gray-800"></span></div>
-                <div class="flex items-end" id="modal-time-row"><span class="w-12 font-bold text-gray-400 uppercase text-[16px] mt-1 shrink-0">時間</span><span id="modal-time" class="font-medium text-gray-800"></span></div>
-                <div class="flex items-end" id="modal-location-row"><span class="w-12 font-bold text-gray-400 uppercase text-[16px] mt-1 shrink-0">地點</span><span id="modal-location" class="font-medium text-gray-800"></span></div>
-                <div id="modal-status-wrapper" class="hidden flex items-end">
-                    <span class="w-12 font-bold text-gray-400 uppercase text-[16px] mt-1 shrink-0">狀態</span>
-                    <span id="modal-status-tag" class="px-2 py-0.5 rounded text-[16px] font-bold"></span>
-                </div>
+            <div class="space-y-4 text-gray-600 text-sm">
+                <div class="flex items-start" id="modal-date-row"><span class="w-16 font-bold text-gray-400">日期</span><span id="modal-date" class="font-medium text-gray-800"></span></div>
+                <div class="flex items-start" id="modal-time-row"><span class="w-16 font-bold text-gray-400">時間</span><span id="modal-time" class="font-medium text-gray-800"></span></div>
+                <div class="flex items-start" id="modal-location-row"><span class="w-16 font-bold text-gray-400">地點</span><span id="modal-location" class="font-medium text-gray-800"></span></div>
+                <div id="modal-status-wrapper" class="hidden flex items-center"><span class="w-16 font-bold text-gray-400">狀態</span><span id="modal-status-tag" class="px-2 py-0.5 rounded font-bold"></span></div>
             </div>
             <div class="mt-8 space-y-3">
-                <a href="#" id="modal-link-btn" target="_blank" class="block w-full text-center px-4 py-3.5 bg-blue-600 text-white rounded-xl font-bold shadow-lg hover:bg-blue-700 transition-all active:scale-[0.98] text-sm">團報去</a>
-                <a href="#" id="modal-web-btn" target="_blank" class="block w-full text-center px-4 py-3.5 bg-gray-100 text-gray-700 border border-gray-300 rounded-xl font-bold hover:bg-gray-200 transition-all active:scale-[0.98] text-sm">看官網點這裡</a>
+                <a href="#" id="modal-link-btn" target="_blank" class="block w-full text-center px-4 py-3.5 bg-blue-600 text-white rounded-xl font-bold">團報去</a>
+                <a href="#" id="modal-web-btn" target="_blank" class="block w-full text-center px-4 py-3.5 bg-gray-100 text-gray-700 border border-gray-300 rounded-xl font-bold">看官網點這裡</a>
             </div>
         </div>
     </div>
@@ -184,55 +201,75 @@
             
             let currentDate = new Date();
             let rawEvents = [];
-            const typeColors = { TRBB: 'event-google-blue', sign: 'event-google-red', competition: 'event-google-yellow' };
+            
+            const typeColors = { 
+                TRBB: 'event-google-blue', 
+                sign: 'event-google-red', 
+                triathlon: 'event-google-green', 
+                Swim: 'event-google-purple', 
+                Bike: 'event-google-yellow', 
+                Run: 'event-google-amber' 
+            };
+
+            function parseCSV(text) {
+                const lines = text.trim().split('\n');
+                return lines.map(line => {
+                    const result = [];
+                    let cell = '';
+                    let inQuote = false;
+                    for (let char of line) {
+                        if (char === '"') inQuote = !inQuote;
+                        else if (char === ',' && !inQuote) {
+                            result.push(cell.trim());
+                            cell = '';
+                        } else cell += char;
+                    }
+                    result.push(cell.trim());
+                    return result;
+                });
+            }
 
             async function fetchEvents() {
                 try {
                     const res = await fetch(googleSheetURL);
                     const text = await res.text();
-                    const lines = text.trim().split('\n');
-                    const headers = lines[0].split(',').map(h => h.trim().toLowerCase());
+                    const data = parseCSV(text);
+                    const headers = data[0].map(h => h.toLowerCase());
+                    
                     const findIdx = (k) => headers.findIndex(h => h.includes(k));
                     const idx = { date: findIdx('date'), title: findIdx('title'), type: findIdx('type'), time: findIdx('time'), loc: findIdx('location'), url: findIdx('url'), web: findIdx('web'), end: findIdx('enddate'), status: findIdx('status') };
 
-                    const eventMap = new Map();
-                    lines.slice(1).forEach(line => {
-                        const v = line.split(',').map(s => s.trim());
-                        if (v.length < 3 || !v[idx.title]) return;
+                    const result = [];
+                    data.slice(1).forEach(v => {
+                        if (!v[idx.title] || !v[idx.date]) return;
                         
                         const start = parseDate(v[idx.date]);
                         let end = (idx.end > -1 && v[idx.end]) ? parseDate(v[idx.end]) : new Date(start);
                         const title = v[idx.title];
-                        const timeVal = v[idx.time] || '';
+                        const sheetType = (v[idx.type] || '').toLowerCase();
                         
-                        if (/^\d{4}[-/]\d{2}[-/]\d{2}$/.test(timeVal)) {
-                            end = parseDate(timeVal);
-                        } 
-                        else if (timeVal.includes('-')) {
-                            const times = timeVal.split('-').map(t => t.trim());
-                            const [sH, sM] = times[0].split(':').map(Number);
-                            const [eH, eM] = times[1].split(':').map(Number);
-                            if (eH < sH || (eH === sH && eM < sM)) {
-                                if (isSameDay(start, end)) {
-                                    end = new Date(start);
-                                    end.setDate(end.getDate() + 1);
-                                }
-                            }
-                        }
+                        let type = 'triathlon'; 
 
-                        let rawType = (v[idx.type] || '').toLowerCase();
-                        let lowerTitle = title.toLowerCase();
-                        let type = 'competition'; 
-                        if (rawType.includes('trbb') || lowerTitle.includes('trbb')) type = 'TRBB';
-                        else if (rawType.includes('sign') || rawType.includes('團報') || rawType.includes('報名') || lowerTitle.includes('sign') || lowerTitle.includes('團報') || lowerTitle.includes('⏰')) type = 'sign';
+                        if (sheetType.includes('trbb')) type = 'TRBB';
+                        else if (sheetType.includes('sign') || sheetType.includes('團報') || title.includes('⏰')) type = 'sign';
+                        else if (sheetType.includes('swim') || sheetType.includes('游泳')) type = 'Swim';
+                        else if (sheetType.includes('bike') || sheetType.includes('單車') || sheetType.includes('腳踏車')) type = 'Bike';
+                        else if (sheetType.includes('run') || sheetType.includes('跑')) type = 'Run';
+                        else if (sheetType.includes('triathlon') || sheetType.includes('三鐵')) type = 'triathlon';
 
-                        const key = `${title}_${v[idx.date]}_${type}`;
-                        if (!eventMap.has(key)) {
-                            eventMap.set(key, { start, end, title, type, time: timeVal, location: v[idx.loc] || '未提供', url: v[idx.url] || '', web: v[idx.web] || '', status: v[idx.status] || '' });
-                        }
+                        result.push({ 
+                            start, end, title, type, 
+                            time: v[idx.time] || '', 
+                            location: v[idx.loc] || '未提供', 
+                            url: v[idx.url] || '', 
+                            web: v[idx.web] || '', 
+                            status: v[idx.status] || '' 
+                        });
                     });
-                    return Array.from(eventMap.values());
-                } catch (e) { return []; }
+                    return result;
+                } catch (e) { 
+                    return []; 
+                }
             }
 
             function parseDate(s) { 
@@ -246,7 +283,10 @@
                 const year = currentDate.getFullYear();
                 currentMonthYear.textContent = `${year} 年 ${month + 1} 月`;
 
+                // 獲取所有具備勾選狀態的類型 (並確保只在有勾選時顯示)
                 const types = Array.from(document.querySelectorAll('[data-event-type]:checked')).map(cb => cb.dataset.eventType);
+                
+                // 過濾活動
                 const activeEvents = rawEvents.filter(e => types.includes(e.type));
 
                 calendarBody.innerHTML = '';
@@ -265,15 +305,15 @@
                     const dayEvents = activeEvents.filter(e => date >= e.start && date <= e.end);
 
                     let html = `<div class="day-cell p-2 flex flex-col ${isPast ? 'is-past' : ''}">
-                        <span class="text-sm self-start mb-2 ${isToday ? 'bg-blue-600 text-white rounded-full h-7 w-7 flex items-center justify-center font-bold shadow-sm' : (isPast ? 'is-past-text' : 'text-gray-700')}">${d}</span>
-                        <div class="space-y-1 overflow-hidden">`;
+                        <span class="text-sm self-start mb-2 ${isToday ? 'bg-blue-600 text-white rounded-full h-7 w-7 flex items-center justify-center font-bold' : (isPast ? 'is-past-text' : 'text-gray-700')}">${d}</span>
+                        <div class="space-y-1">`;
                     
                     dayEvents.forEach(e => {
-                        const colorClass = typeColors[e.type];
+                        const colorClass = typeColors[e.type] || 'event-google-blue';
                         const colorPrefix = colorClass.split('-')[2];
                         
                         html += `
-                            <div class="event-item flex items-center text-[11px] p-1 rounded-md bg-${colorPrefix}-50 text-${colorPrefix}-800 border border-${colorPrefix}-100 cursor-pointer hover:opacity-80 transition-opacity" data-event-idx="${rawEvents.indexOf(e)}">
+                            <div class="event-item flex items-center text-[11px] p-1 rounded-md bg-${colorPrefix}-50 text-${colorPrefix}-800 border border-${colorPrefix}-100 cursor-pointer transition-all active:scale-95" data-event-idx="${rawEvents.indexOf(e)}">
                                 <span class="event-dot ${colorClass} mr-1.5 flex-shrink-0"></span>
                                 <span class="truncate font-semibold">${e.title}</span>
                             </div>`;
@@ -286,24 +326,20 @@
                 const monthEvents = activeEvents.filter(e => (e.start.getMonth() === month && e.start.getFullYear() === year) || (e.end.getMonth() === month && e.end.getFullYear() === year)).sort((a,b) => a.start - b.start);
                 
                 if (monthEvents.length === 0) {
-                    listViewContainer.innerHTML = `<div class="bg-white p-12 text-center rounded-2xl border border-gray-100 text-gray-400 font-medium italic shadow-sm">本月尚無活動安排</div>`;
+                    listViewContainer.innerHTML = `<div class="bg-white p-12 text-center rounded-2xl text-gray-400 font-medium italic">目前無勾選或尚無活動</div>`;
                 } else {
                     monthEvents.forEach(e => {
-                        const colorClass = typeColors[e.type];
+                        const colorClass = typeColors[e.type] || 'event-google-blue';
                         const isPast = e.end < today;
-                        
                         listViewContainer.innerHTML += `
-                            <div class="event-item bg-white rounded-xl p-3 border border-gray-100 flex items-center space-x-4 cursor-pointer hover:shadow-md transition-all ${isPast ? 'opacity-50' : 'shadow-sm'}" data-event-idx="${rawEvents.indexOf(e)}">
+                            <div class="event-item bg-white rounded-xl p-3 border border-gray-100 flex items-center space-x-4 cursor-pointer ${isPast ? 'opacity-50' : ''}" data-event-idx="${rawEvents.indexOf(e)}">
                                 <div class="text-center w-12 flex-shrink-0 border-r border-gray-100 pr-3">
-                                    <p class="text-[9px] text-gray-400 font-bold uppercase tracking-tighter">${e.start.getMonth()+1}月</p>
-                                    <p class="text-lg font-black text-gray-800 leading-none">${e.start.getDate()}</p>
+                                    <p class="text-[9px] text-gray-400 font-bold">${e.start.getMonth()+1}月</p>
+                                    <p class="text-lg font-black text-gray-800">${e.start.getDate()}</p>
                                 </div>
                                 <div class="flex-grow">
-                                    <div class="flex items-center gap-1.5 mb-0.5">
-                                        <span class="event-dot ${colorClass} w-1.5 h-1.5"></span>
-                                        <p class="font-bold text-xs text-gray-900 leading-snug">${e.title}</p>
-                                    </div>
-                                    <p class="text-[9px] text-gray-500 font-medium opacity-80">${e.time} ${e.location !== '未提供' ? '@ ' + e.location : ''}</p>
+                                    <div class="flex items-center gap-1.5"><span class="event-dot ${colorClass} w-1.5 h-1.5"></span><p class="font-bold text-xs text-gray-900">${e.title}</p></div>
+                                    <p class="text-[9px] text-gray-500">${e.time} ${e.location !== '未提供' ? '@ ' + e.location : ''}</p>
                                 </div>
                             </div>`;
                     });
@@ -312,24 +348,17 @@
 
             document.addEventListener('click', (e) => {
                 const item = e.target.closest('.event-item');
-                if (item) {
-                    const idx = item.getAttribute('data-event-idx');
-                    if (idx !== null) openModal(rawEvents[parseInt(idx)]);
-                }
+                if (item) openModal(rawEvents[parseInt(item.dataset.eventIdx)]);
             });
 
             function openModal(event) {
                 const modal = document.getElementById('event-modal');
-                const title = document.getElementById('modal-title');
-                const dateText = document.getElementById('modal-date');
-                const timeText = document.getElementById('modal-time');
-                const locationText = document.getElementById('modal-location');
                 const statusWrapper = document.getElementById('modal-status-wrapper');
                 const statusTag = document.getElementById('modal-status-tag');
                 const linkBtn = document.getElementById('modal-link-btn');
                 const webBtn = document.getElementById('modal-web-btn');
-
-                title.textContent = event.title;
+                
+                document.getElementById('modal-title').textContent = event.title;
                 
                 if (event.type === 'sign') {
                     document.getElementById('modal-date-row').style.display = 'none';
@@ -340,42 +369,52 @@
                     document.getElementById('modal-date-row').style.display = 'flex';
                     document.getElementById('modal-time-row').style.display = 'flex';
                     document.getElementById('modal-location-row').style.display = 'flex';
-                    
-                    dateText.textContent = isSameDay(event.start, event.end) ? event.start.toLocaleDateString('zh-TW') : `${event.start.toLocaleDateString('zh-TW')} - ${event.end.toLocaleDateString('zh-TW')}`;
-                    timeText.textContent = event.time;
-                    locationText.textContent = event.location;
+                    document.getElementById('modal-date').textContent = isSameDay(event.start, event.end) ? event.start.toLocaleDateString('zh-TW') : `${event.start.toLocaleDateString('zh-TW')} - ${event.end.toLocaleDateString('zh-TW')}`;
+                    document.getElementById('modal-time').textContent = event.time;
+                    document.getElementById('modal-location').textContent = event.location;
                     
                     if (event.status) {
                         statusWrapper.classList.remove('hidden');
                         statusTag.textContent = event.status;
-                        statusTag.className = "px-2 rounded text-[20px] font-bold";
-                        if (event.status === '團報截止') statusTag.classList.add('bg-red-100', 'text-red-800');
+                        statusTag.className = "px-2 rounded font-bold ";
+                        if (event.status === '團報截止') statusTag.classList.add('bg-yellow-100', 'text-yellow-800');
                         else if (event.status === '沒有團報') statusTag.classList.add('bg-gray-100', 'text-gray-800');
-                        else if (event.status === '團報中') statusTag.classList.add('bg-green-100', 'text-green-800');
-                        else statusTag.classList.add('bg-blue-100', 'text-blue-800');
+                        else statusTag.classList.add('bg-green-100', 'text-green-800');
                     } else statusWrapper.classList.add('hidden');
                 }
 
+                const noGroupRegistration = event.status === '團報截止' || event.status === '沒有團報';
+                
                 linkBtn.href = event.url || "#";
                 linkBtn.textContent = event.type === 'TRBB' ? '+1 報名' : '團報去';
-                linkBtn.classList.toggle('hidden', !event.url);
+                linkBtn.classList.toggle('hidden', noGroupRegistration || !event.url);
+                
                 webBtn.href = event.web || "#";
                 webBtn.classList.toggle('hidden', !event.web);
+                webBtn.textContent = "看官網點這裡";
                 
                 modal.classList.replace('hidden', 'flex');
             }
 
-            // 綁定按鈕事件
-            const backToToday = () => { currentDate = new Date(); render(); };
             document.getElementById('modal-close-btn').onclick = () => document.getElementById('event-modal').classList.replace('flex', 'hidden');
             document.getElementById('prev-month').onclick = () => { currentDate.setMonth(currentDate.getMonth() - 1); render(); };
             document.getElementById('next-month').onclick = () => { currentDate.setMonth(currentDate.getMonth() + 1); render(); };
-            document.getElementById('today-btn').onclick = backToToday;
-            document.getElementById('today-btn-mobile').onclick = backToToday;
+            document.getElementById('today-btn').onclick = () => { currentDate = new Date(); render(); };
+            document.getElementById('today-btn-mobile').onclick = () => { currentDate = new Date(); render(); };
             
-            // 監聽所有篩選器
-            document.querySelectorAll('[data-event-type]').forEach(el => {
-                el.addEventListener('change', render);
+            // 修正：同步手機與電腦版的勾選狀態
+            document.querySelectorAll('input[data-event-type]').forEach(el => {
+                el.addEventListener('change', (e) => {
+                    const type = e.target.dataset.eventType;
+                    const isChecked = e.target.checked;
+                    
+                    // 同步所有相同類型的 checkbox
+                    document.querySelectorAll(`input[data-event-type="${type}"]`).forEach(input => {
+                        input.checked = isChecked;
+                    });
+                    
+                    render();
+                });
             });
 
             rawEvents = await fetchEvents();
