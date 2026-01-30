@@ -33,7 +33,7 @@
             transition: background-color 0.2s;
         }
         
-        /* 修復：只有每一排的第 7 個（週日）才不顯示右邊框，避免與外框重複 */
+        /* 修復：只有每一排的第 7 個（週日）才不顯示右邊框 */
         .day-cell:nth-child(7n) {
             border-right: none;
         }
@@ -45,7 +45,6 @@
             flex-shrink: 0;
         }
 
-        /* 過去日期的灰色樣式 */
         .is-past { background-color: #f9fafb; }
         .is-past-text { color: #d1d5db !important; }
 
@@ -121,15 +120,15 @@
 
                 <div class="flex items-center justify-between md:justify-start md:space-x-4">
                     <div class="flex items-center space-x-1 md:space-x-4">
-                        <button id="prev-month" class="p-2 rounded-full hover:bg-white/10 md:hover:bg-gray-100">
+                        <button id="prev-month" class="p-2 rounded-full hover:bg-white/10 md:hover:bg-gray-100 transition-colors">
                             <svg class="w-5 h-5 md:w-6 md:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="2.5" d="M15 19l-7-7 7-7"></path></svg>
                         </button>
                         <h2 id="current-month-year" class="text-lg md:text-2xl font-bold min-w-[120px] md:min-w-[140px] text-center"></h2>
-                        <button id="next-month" class="p-2 rounded-full hover:bg-white/10 md:hover:bg-gray-100">
+                        <button id="next-month" class="p-2 rounded-full hover:bg-white/10 md:hover:bg-gray-100 transition-colors">
                             <svg class="w-5 h-5 md:w-6 md:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="2.5" d="M9 5l7 7-7 7"></path></svg>
                         </button>
                     </div>
-                    <button id="today-btn" class="hidden md:block px-6 py-2 text-sm font-bold bg-white border border-gray-300 rounded-lg hover:bg-gray-50 text-gray-700 shadow-sm">今天</button>
+                    <button id="today-btn" class="hidden md:block px-6 py-2 text-sm font-bold bg-white border border-gray-300 rounded-lg hover:bg-gray-50 text-gray-700 shadow-sm transition-all">今天</button>
                 </div>
 
                 <!-- 手機版頂部篩選器 -->
@@ -176,7 +175,7 @@
 
     <!-- 詳情視窗 (Modal) -->
     <div id="event-modal" class="fixed inset-0 bg-black/50 z-50 hidden items-center justify-center p-4 backdrop-blur-sm">
-        <div class="bg-white rounded-2xl shadow-2xl p-6 md:p-8 w-full max-w-md relative">
+        <div class="bg-white rounded-2xl shadow-2xl p-6 md:p-8 w-full max-w-md relative animate-in zoom-in duration-200">
             <button id="modal-close-btn" class="absolute top-5 right-5 text-gray-400 hover:text-gray-800 text-2xl">×</button>
             <h3 id="modal-title" class="text-xl md:text-2xl font-bold mb-6 text-gray-900 leading-tight"></h3>
             <div class="space-y-4 text-gray-600 text-sm">
@@ -186,8 +185,8 @@
                 <div id="modal-status-wrapper" class="hidden flex items-center"><span class="w-16 font-bold text-gray-400">狀態</span><span id="modal-status-tag" class="px-2 py-0.5 rounded font-bold"></span></div>
             </div>
             <div class="mt-8 space-y-3">
-                <a href="#" id="modal-link-btn" target="_blank" class="block w-full text-center px-4 py-3.5 bg-blue-600 text-white rounded-xl font-bold">團報去</a>
-                <a href="#" id="modal-web-btn" target="_blank" class="block w-full text-center px-4 py-3.5 bg-gray-100 text-gray-700 border border-gray-300 rounded-xl font-bold">看官網點這裡</a>
+                <a href="#" id="modal-link-btn" target="_blank" class="block w-full text-center px-4 py-3.5 bg-blue-600 text-white rounded-xl font-bold shadow-lg hover:bg-blue-700 transition-all active:scale-[0.98]">團報去</a>
+                <a href="#" id="modal-web-btn" target="_blank" class="block w-full text-center px-4 py-3.5 bg-gray-100 text-gray-700 border border-gray-300 rounded-xl font-bold hover:bg-gray-200 transition-all active:scale-[0.98]">看官網點這裡</a>
             </div>
         </div>
     </div>
@@ -234,10 +233,22 @@
                     const res = await fetch(googleSheetURL);
                     const text = await res.text();
                     const data = parseCSV(text);
-                    const headers = data[0].map(h => h.toLowerCase());
+                    const headers = data[0].map(h => h.toLowerCase().trim());
                     
-                    const findIdx = (k) => headers.findIndex(h => h.includes(k));
-                    const idx = { date: findIdx('date'), title: findIdx('title'), type: findIdx('type'), time: findIdx('time'), loc: findIdx('location'), url: findIdx('url'), web: findIdx('web'), end: findIdx('enddate'), status: findIdx('status') };
+                    const findIdx = (k) => headers.findIndex(h => h === k || h.includes(k));
+                    
+                    // 根據需求：form 是報名表單, web 是官網
+                    const idx = { 
+                        date: findIdx('date'), 
+                        title: findIdx('title'), 
+                        type: findIdx('type'), 
+                        time: findIdx('time'), 
+                        loc: findIdx('location'), 
+                        form: findIdx('form'), // 修改這裡對應 form 欄位
+                        web: findIdx('web'), 
+                        end: findIdx('enddate'), 
+                        status: findIdx('status') 
+                    };
 
                     const result = [];
                     data.slice(1).forEach(v => {
@@ -261,8 +272,8 @@
                             start, end, title, type, 
                             time: v[idx.time] || '', 
                             location: v[idx.loc] || '未提供', 
-                            url: v[idx.url] || '', 
-                            web: v[idx.web] || '', 
+                            formUrl: v[idx.form] || '', // 儲存報名表單連結
+                            webUrl: v[idx.web] || '',   // 儲存官網連結
                             status: v[idx.status] || '' 
                         });
                     });
@@ -283,10 +294,7 @@
                 const year = currentDate.getFullYear();
                 currentMonthYear.textContent = `${year} 年 ${month + 1} 月`;
 
-                // 獲取所有具備勾選狀態的類型 (並確保只在有勾選時顯示)
                 const types = Array.from(document.querySelectorAll('[data-event-type]:checked')).map(cb => cb.dataset.eventType);
-                
-                // 過濾活動
                 const activeEvents = rawEvents.filter(e => types.includes(e.type));
 
                 calendarBody.innerHTML = '';
@@ -305,7 +313,7 @@
                     const dayEvents = activeEvents.filter(e => date >= e.start && date <= e.end);
 
                     let html = `<div class="day-cell p-2 flex flex-col ${isPast ? 'is-past' : ''}">
-                        <span class="text-sm self-start mb-2 ${isToday ? 'bg-blue-600 text-white rounded-full h-7 w-7 flex items-center justify-center font-bold' : (isPast ? 'is-past-text' : 'text-gray-700')}">${d}</span>
+                        <span class="text-sm self-start mb-2 ${isToday ? 'bg-blue-600 text-white rounded-full h-7 w-7 flex items-center justify-center font-bold shadow-sm' : (isPast ? 'is-past-text' : 'text-gray-700')}">${d}</span>
                         <div class="space-y-1">`;
                     
                     dayEvents.forEach(e => {
@@ -332,14 +340,14 @@
                         const colorClass = typeColors[e.type] || 'event-google-blue';
                         const isPast = e.end < today;
                         listViewContainer.innerHTML += `
-                            <div class="event-item bg-white rounded-xl p-3 border border-gray-100 flex items-center space-x-4 cursor-pointer ${isPast ? 'opacity-50' : ''}" data-event-idx="${rawEvents.indexOf(e)}">
+                            <div class="event-item bg-white rounded-xl p-3 border border-gray-100 flex items-center space-x-4 cursor-pointer ${isPast ? 'opacity-50' : 'shadow-sm'}" data-event-idx="${rawEvents.indexOf(e)}">
                                 <div class="text-center w-12 flex-shrink-0 border-r border-gray-100 pr-3">
-                                    <p class="text-[9px] text-gray-400 font-bold">${e.start.getMonth()+1}月</p>
-                                    <p class="text-lg font-black text-gray-800">${e.start.getDate()}</p>
+                                    <p class="text-[9px] text-gray-400 font-bold uppercase">${e.start.getMonth()+1}月</p>
+                                    <p class="text-lg font-black text-gray-800 leading-none">${e.start.getDate()}</p>
                                 </div>
                                 <div class="flex-grow">
                                     <div class="flex items-center gap-1.5"><span class="event-dot ${colorClass} w-1.5 h-1.5"></span><p class="font-bold text-xs text-gray-900">${e.title}</p></div>
-                                    <p class="text-[9px] text-gray-500">${e.time} ${e.location !== '未提供' ? '@ ' + e.location : ''}</p>
+                                    <p class="text-[9px] text-gray-500 font-medium opacity-80">${e.time} ${e.location !== '未提供' ? '@ ' + e.location : ''}</p>
                                 </div>
                             </div>`;
                     });
@@ -385,12 +393,14 @@
 
                 const noGroupRegistration = event.status === '團報截止' || event.status === '沒有團報';
                 
-                linkBtn.href = event.url || "#";
+                // 報名按鈕連結 form 欄位
+                linkBtn.href = event.formUrl || "#";
                 linkBtn.textContent = event.type === 'TRBB' ? '+1 報名' : '團報去';
-                linkBtn.classList.toggle('hidden', noGroupRegistration || !event.url);
+                linkBtn.classList.toggle('hidden', noGroupRegistration || !event.formUrl);
                 
-                webBtn.href = event.web || "#";
-                webBtn.classList.toggle('hidden', !event.web);
+                // 官網按鈕連結 web 欄位
+                webBtn.href = event.webUrl || "#";
+                webBtn.classList.toggle('hidden', !event.webUrl);
                 webBtn.textContent = "看官網點這裡";
                 
                 modal.classList.replace('hidden', 'flex');
@@ -402,17 +412,13 @@
             document.getElementById('today-btn').onclick = () => { currentDate = new Date(); render(); };
             document.getElementById('today-btn-mobile').onclick = () => { currentDate = new Date(); render(); };
             
-            // 修正：同步手機與電腦版的勾選狀態
             document.querySelectorAll('input[data-event-type]').forEach(el => {
                 el.addEventListener('change', (e) => {
                     const type = e.target.dataset.eventType;
                     const isChecked = e.target.checked;
-                    
-                    // 同步所有相同類型的 checkbox
                     document.querySelectorAll(`input[data-event-type="${type}"]`).forEach(input => {
                         input.checked = isChecked;
                     });
-                    
                     render();
                 });
             });
