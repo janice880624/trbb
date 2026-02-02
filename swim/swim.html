@@ -35,6 +35,7 @@
 <body class="p-4 md:p-8 min-h-screen">
 
     <div class="max-w-5xl mx-auto">
+        <header class="text-center mb-10">
             <h1 class="text-4xl font-black text-slate-900 flex items-center justify-center gap-3">
                 <i data-lucide="waves" class="text-blue-500"></i> 游泳進度大對抗
             </h1>
@@ -109,7 +110,7 @@
 
         <footer class="mt-16 mb-12 text-center text-slate-400 text-[10px] font-black tracking-[0.3em] uppercase">
             Keep Swimming • Every Meter Counts
-          <p>Copyright © 2026 Janice. All rights reserved.</p>
+            <p class="mt-2 tracking-normal">Copyright © 2026 Janice. All rights reserved.</p>
         </footer>
     </div>
 
@@ -122,7 +123,7 @@
             { id: 'A', name: 'A 組', animal: '鯊魚隊', color: 'bg-blue-600', icon: '🦈' },
             { id: 'B', name: 'B 組', animal: '海豚隊', color: 'bg-cyan-500', icon: '🐬' },
             { id: 'C', name: 'C 組', animal: '鯨魚隊', color: 'bg-indigo-500', icon: '🐳' },
-            { id: 'NEWBIE', name: '新手組', animal: '海龜隊', color: 'bg-emerald-500', icon: '🐢' },
+            { id: 'NEWBIE', name: '新手組', animal: '小鴨隊', color: 'bg-yellow-400', icon: '🦆' },
         ];
 
         let records = [];
@@ -131,22 +132,15 @@
 
         document.getElementById('input-date').value = new Date().toISOString().split('T')[0];
 
-        // 智慧欄位尋找函數：增加更嚴格的內容判斷來解決偏移
         function getValue(obj, keys, isNumber = false) {
             for (let k of Object.keys(obj)) {
                 const lowerK = k.toLowerCase().trim();
                 if (keys.some(key => lowerK === key)) {
                     let val = obj[k];
-                    
-                    // 偵測日期偏移：如果這個欄位原本要是數字（如距離），但內容像日期字串，跳過
                     if (isNumber && typeof val === 'string' && (val.includes('T') || val.includes('-'))) continue;
-                    
-                    // 偵測字串偏移：如果這欄位是名稱，但內容全是數字，可能抓錯了（不絕對，但可作為輔助）
-                    
                     return isNumber ? (Number(val) || 0) : val;
                 }
             }
-            // 如果找不到對應 key，但如果是要數字，試著找出物件中唯一的數字欄位
             if (isNumber) {
                 for (let k in obj) {
                     const v = obj[k];
@@ -245,7 +239,7 @@
                 <div class="bg-white p-6 rounded-[1.5rem] shadow-sm border border-slate-100 hover:shadow-md transition-all">
                     <div class="flex justify-between items-center mb-3">
                         <span class="text-3xl">${g.icon}</span>
-                        <span class="text-[9px] font-black text-slate-300 uppercase tracking-[0.2em]">${g.id}組</span>
+                        <span class="text-[9px] font-black text-slate-300 uppercase tracking-[0.2em]">${g.id}</span>
                     </div>
                     <p class="text-[10px] font-black text-slate-400 mb-1 uppercase tracking-wider">${g.animal}</p>
                     <p class="text-2xl font-black text-slate-900 tracking-tighter">${(stats[g.id] || 0).toLocaleString()}<span class="text-xs ml-1 text-slate-300">M</span></p>
@@ -266,7 +260,6 @@
                         try {
                             const d = new Date(rawDate);
                             if (!isNaN(d.getTime())) {
-                                // 修正 ISO 字串顯示，只取日期部分
                                 displayDate = d.toLocaleDateString('zh-TW');
                             }
                         } catch(e) {}
@@ -312,7 +305,6 @@
             const swimData = { name, distance: Number(distance), group: selectedGroupId, date: date };
 
             try {
-                // 樂觀更新
                 records.unshift({ ...swimData, timestamp: new Date().toISOString() });
                 updateUI();
 
@@ -324,7 +316,6 @@
                 });
 
                 document.getElementById('input-distance').value = '';
-                // 這裡修改了提示訊息：某某人 提交成功！
                 showToast(`🎉 ${name} 提交成功！`, "bg-green-500 shadow-green-100");
                 setTimeout(fetchData, 3000);
             } catch (error) {
