@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>游泳保證班進度追蹤</title>
+    <title>游泳保證班進度追蹤 - 2026 競技版</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
@@ -12,8 +12,12 @@
         .custom-scrollbar::-webkit-scrollbar { width: 6px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        
+        /* 泳手平滑移動動畫 */
         .swim-lane-container { transition: all 1.2s cubic-bezier(0.34, 1.56, 0.64, 1); z-index: 30; }
-        .animal-emoji { transform: scaleX(-1); display: inline-block; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.2)); }
+        .animal-emoji { transform: scaleX(-1); display: inline-block; filter: drop-shadow(0 4px 8px rgba(0,0,0,0.3)); }
+        
+        /* 水道繩 (Lane Ropes) 效果 */
         .lane-rope {
             height: 6px;
             background: repeating-linear-gradient(90deg, #ef4444 0px, #ef4444 20px, #ffffff 20px, #ffffff 40px);
@@ -21,103 +25,162 @@
             box-shadow: 0 1px 3px rgba(0,0,0,0.1);
             z-index: 40;
         }
-        @keyframes water-flow {
-            from { background-position: 0 0; }
-            to { background-position: 80px 0; }
-        }
+
+        /* 動態水波背景 */
         .pool-water {
             background-color: #2563eb;
             background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='20' viewBox='0 0 80 20'%3E%3Cpath d='M0 10 Q20 0 40 10 T80 10' fill='none' stroke='white' stroke-opacity='0.15' stroke-width='3'/%3E%3C/svg%3E");
             animation: water-flow 4s linear infinite;
         }
+        @keyframes water-flow { from { background-position: 0 0; } to { background-position: 80px 0; } }
+        
+        /* 勳章點亮特效 */
+        .badge-glow { filter: drop-shadow(0 0 12px rgba(234, 179, 8, 0.8)); animation: pulse-glow 2s infinite; }
+        @keyframes pulse-glow { 0%, 100% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.08); opacity: 0.9; } }
+        
+        .tab-active { color: #2563eb; border-bottom: 4px solid #2563eb; }
     </style>
 </head>
 <body class="p-4 md:p-8 min-h-screen">
 
     <div class="max-w-5xl mx-auto">
+        <!-- 頂部切換導覽 -->
+        <nav class="bg-white rounded-3xl shadow-xl mb-10 flex justify-center p-2 sticky top-4 z-50 border border-slate-100 backdrop-blur-md bg-white/90">
+            <button onclick="switchTab('competition')" id="tab-competition" class="px-8 py-3 font-black text-sm transition-all tab-active flex items-center gap-2">
+                <i data-lucide="waves" class="w-4 h-4"></i> 里程大對抗
+            </button>
+            <button onclick="switchTab('skills')" id="tab-skills" class="px-8 py-3 font-black text-sm transition-all text-slate-400 flex items-center gap-2">
+                <i data-lucide="trophy" class="w-4 h-4"></i> 技巧檢核牆
+            </button>
+        </nav>
+
         <header class="text-center mb-10">
-            <h1 class="text-4xl font-black text-slate-900 flex items-center justify-center gap-3">
-                <i data-lucide="waves" class="text-blue-500"></i> 游泳進度大對抗
+            <h1 id="main-title" class="text-4xl font-black text-slate-900 flex items-center justify-center gap-3">
+                游泳進度大對抗
             </h1>
-            <div class="flex items-center justify-center gap-4 mt-5">
-                <div id="last-updated" class="text-slate-400 text-xs font-bold bg-white px-4 py-1.5 rounded-full shadow-sm border border-slate-100">正在連線試算表...</div>
-                <button onclick="fetchData()" class="p-2 bg-white rounded-full text-slate-400 hover:text-blue-600 shadow-sm border border-slate-200 transition-all active:scale-90">
+            <div class="flex items-center justify-center gap-4 mt-6">
+                <div id="last-updated" class="text-slate-400 text-[10px] font-black tracking-widest bg-white px-4 py-2 rounded-full shadow-sm border border-slate-100 uppercase">
+                    Syncing Data...
+                </div>
+                <button onclick="fetchData()" class="p-2 bg-white rounded-full text-slate-400 hover:text-blue-600 shadow-md border border-slate-100 transition-all active:scale-90">
                     <i data-lucide="refresh-cw" class="w-4 h-4"></i>
                 </button>
             </div>
         </header>
 
-        <div class="relative mb-12">
-            <div class="bg-slate-900 rounded-[2.5rem] shadow-2xl border-[10px] border-slate-800 overflow-hidden relative">
+        <!-- [分頁 1：里程對抗] -->
+        <div id="page-competition" class="space-y-12">
+            <!-- 四水道看板 -->
+            <div class="bg-slate-900 rounded-[3rem] shadow-2xl border-[12px] border-slate-800 overflow-hidden relative">
                 <div id="pool-container" class="flex flex-col bg-blue-700">
-                    <!-- 泳道內容 -->
+                    <!-- JS 生成水道 -->
                 </div>
-                <div class="bg-slate-800 flex justify-between items-center px-10 py-4 text-[11px] font-black text-slate-300 tracking-widest uppercase">
-                    <div class="flex items-center gap-2 drop-shadow-sm"><i data-lucide="flag" class="w-3.5 h-3.5 text-red-500"></i> 起點 Start</div>
-                    <div class="flex items-center gap-2 drop-shadow-sm" id="pool-goal-label">目標 Goal: 10,000m <i data-lucide="trophy" class="w-3.5 h-3.5 text-yellow-500"></i></div>
+                <div class="bg-slate-800 flex justify-between items-center px-12 py-5 text-[11px] font-black text-slate-400 tracking-[0.2em] uppercase">
+                    <div class="flex items-center gap-2"><i data-lucide="flag" class="w-4 h-4 text-red-500"></i> START</div>
+                    <div class="flex items-center gap-2" id="pool-goal-label">Goal: 10,000m <i data-lucide="award" class="w-4 h-4 text-yellow-500"></i></div>
                 </div>
             </div>
-        </div>
 
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            <div class="bg-white p-8 rounded-[2rem] shadow-xl border border-slate-100 lg:col-span-1">
-                <h2 class="text-2xl font-black text-slate-800 mb-8 flex items-center gap-2 border-b pb-5">
-                    <i data-lucide="pencil-line" class="text-blue-500 w-6 h-6"></i> 回報進度
-                </h2>
-                <form id="swim-form" class="space-y-6">
-                    <div>
-                        <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">選擇組別</label>
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <!-- 回報表單 -->
+                <div class="bg-white p-8 rounded-[2.5rem] shadow-2xl border border-slate-50 lg:col-span-1">
+                    <h2 class="text-2xl font-black text-slate-800 mb-8 border-b border-slate-50 pb-5">
+                        回報里程
+                    </h2>
+                    <form id="swim-form" class="space-y-6">
                         <div class="grid grid-cols-2 gap-2" id="group-selector"></div>
-                    </div>
-                    
-                    <div class="space-y-5">
+                        
                         <div>
-                            <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">姓名</label>
-                            <input type="text" id="input-name" required placeholder="暱稱" class="w-full p-4 rounded-2xl bg-slate-50 border-2 border-slate-50 focus:border-blue-400 focus:bg-white outline-none transition-all font-bold">
+                            <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">誰在游泳？</label>
+                            <select id="input-name-dropdown" required class="w-full p-4 rounded-2xl bg-slate-50 border-2 border-slate-50 focus:border-blue-400 outline-none font-bold appearance-none cursor-pointer text-slate-700">
+                                <option value="">載入名單中...</option>
+                            </select>
                         </div>
                         
                         <div>
-                            <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">游泳日期</label>
-                            <input type="date" id="input-date" required class="w-full p-4 rounded-2xl bg-slate-50 border-2 border-slate-50 focus:border-blue-400 focus:bg-white outline-none transition-all font-bold text-slate-600">
+                            <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">運動日期</label>
+                            <input type="date" id="input-date" required class="w-full p-4 rounded-2xl bg-slate-50 border-2 border-slate-50 focus:border-blue-400 outline-none font-bold text-slate-600">
                         </div>
 
                         <div>
-                            <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">距離 (公尺)</label>
-                            <div class="relative">
-                                <input type="number" id="input-distance" required placeholder="0" class="w-full p-4 rounded-2xl bg-slate-50 border-2 border-slate-50 focus:border-blue-400 focus:bg-white outline-none transition-all font-black text-3xl text-blue-600">
-                                <span class="absolute right-5 top-1/2 -translate-y-1/2 font-black text-slate-300">m</span>
-                            </div>
+                            <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">游了多少公尺 (M)</label>
+                            <input type="number" id="input-distance" required placeholder="0" class="w-full p-4 rounded-2xl bg-slate-50 border-2 border-slate-50 focus:border-blue-400 outline-none font-black text-4xl text-blue-600">
                         </div>
-                    </div>
 
-                    <button type="submit" id="submit-btn" class="w-full py-5 rounded-2xl font-black text-xl text-white shadow-lg flex items-center justify-center gap-2 transition-all bg-blue-600 hover:bg-blue-700 active:scale-95 shadow-blue-100 mt-4">
-                        送出進度 🌊
-                    </button>
-                </form>
+                        <button type="submit" id="submit-btn" class="w-full py-5 rounded-[1.5rem] font-black text-xl text-white bg-blue-600 shadow-xl shadow-blue-100 active:scale-95 transition-all">
+                            送出里程 🌊
+                        </button>
+                    </form>
+                </div>
+
+                <!-- 歷史動態 -->
+                <div class="bg-white p-8 rounded-[2.5rem] shadow-2xl border border-slate-50 lg:col-span-2 flex flex-col max-h-[680px]">
+                    <h2 class="text-2xl font-black text-slate-800 mb-8 border-b border-slate-50 pb-5 flex items-center justify-between">
+                        最新動態
+                        <span class="text-xs text-slate-300 font-bold uppercase tracking-widest">Recent Activity</span>
+                    </h2>
+                    <div id="history-list" class="flex-1 overflow-y-auto space-y-2 pr-2 custom-scrollbar">
+                        <!-- 資料由 JS 渲染 -->
+                    </div>
+                </div>
+            </div>
+            
+            <div id="stats-summary" class="grid grid-cols-2 lg:grid-cols-4 gap-6"></div>
+        </div>
+
+        <!-- [分頁 2：技巧檢核牆] -->
+        <div id="page-skills" class="hidden space-y-10">
+            <!-- 技巧自動打勾表單 -->
+            <div class="bg-gradient-to-br from-indigo-600 to-blue-700 p-10 rounded-[3rem] shadow-2xl text-white">
+                <div class="flex flex-col md:flex-row items-center gap-8">
+                    <div class="shrink-0 text-center md:text-left">
+                        <h2 class="text-3xl font-black mb-2 flex items-center gap-3 justify-center md:justify-start">
+                            解鎖新技能！ <i data-lucide="sparkles" class="text-yellow-400"></i>
+                        </h2>
+                        <p class="opacity-70 font-bold uppercase tracking-widest text-xs">Skills Automatic Checker</p>
+                    </div>
+                    <form id="skill-form" class="flex-1 grid grid-cols-1 md:grid-cols-3 gap-6 items-end w-full">
+                        <div>
+                            <label class="block text-[10px] font-black mb-2 opacity-80 uppercase tracking-widest text-white">姓名 (來自 Skills 名單)</label>
+                            <select id="skill-name-dropdown" required class="w-full p-5 rounded-2xl bg-white/10 border border-white/20 focus:bg-white focus:text-slate-900 outline-none font-black transition-all shadow-xl appearance-none cursor-pointer">
+                                <option value="">選擇學員</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-black mb-2 opacity-80 uppercase tracking-widest text-white">解鎖哪一項？</label>
+                            <select id="skill-type-input" class="w-full p-5 rounded-2xl bg-white/10 border border-white/20 focus:bg-white focus:text-slate-900 outline-none font-black transition-all shadow-xl appearance-none cursor-pointer">
+                                <option value="搖櫓">👐 搖櫓 (Sculling)</option>
+                                <option value="垂直踢水">🦵 垂直踢水 (Vertical Kick)</option>
+                                <option value="單臂划水">🏊 單臂划水 (Single Arm)</option>
+                            </select>
+                        </div>
+                        <button type="submit" id="skill-submit-btn" class="bg-yellow-400 hover:bg-yellow-500 text-indigo-900 py-5 px-10 rounded-2xl font-black text-xl shadow-2xl active:scale-95 transition-all">
+                            幫我打勾！
+                        </button>
+                    </form>
+                </div>
             </div>
 
-            <div class="bg-white p-8 rounded-[2rem] shadow-xl border border-slate-100 lg:col-span-2 flex flex-col max-h-[650px]">
-                <h2 class="text-2xl font-black text-slate-800 mb-8 flex items-center gap-2 border-b pb-5">
-                    <i data-lucide="history" class="text-blue-500 w-6 h-6"></i> 最新動態
-                </h2>
-                <div id="history-list" class="flex-1 overflow-y-auto space-y-4 pr-2 custom-scrollbar">
-                    <div class="text-center py-24 text-slate-300 font-bold italic">連線中...</div>
-                </div>
+            <!-- 展示牆 -->
+            <div id="skills-wall" class="flex flex-col gap-3">
+                <!-- 由 JS 生成勳章列表 -->
             </div>
         </div>
 
-        <div id="stats-summary" class="mt-10 grid grid-cols-2 lg:grid-cols-4 gap-4"></div>
-
-        <footer class="mt-16 mb-12 text-center text-slate-400 text-[10px] font-black tracking-[0.3em] uppercase">
-            Keep Swimming • Every Meter Counts
-            <p class="mt-2 tracking-normal">Copyright © 2026 Janice. All rights reserved.</p>
+        <footer class="mt-24 mb-12 text-center">
+            <p class="text-slate-400 text-[10px] font-black tracking-[0.4em] uppercase">
+                Keep Swimming • Every Meter Counts
+            </p>
+            <p class="mt-3 text-slate-300 text-[10px] font-bold uppercase">Copyright © 2026 Janice Swimming Club.</p>
         </footer>
     </div>
 
-    <div id="toast" class="fixed bottom-10 left-1/2 -translate-x-1/2 px-8 py-4 rounded-2xl shadow-2xl text-white font-black z-50 transition-all duration-500 opacity-0 translate-y-10 pointer-events-none flex items-center gap-2"></div>
+    <!-- 通知元件 -->
+    <div id="toast" class="fixed bottom-12 left-1/2 -translate-x-1/2 px-10 py-5 rounded-full shadow-2xl text-white font-black z-50 transition-all duration-500 opacity-0 translate-y-10 pointer-events-none flex items-center gap-3"></div>
 
     <script>
-        const SHEET_API_URL = "https://script.google.com/macros/s/AKfycbzMxGKRJfcM8YxE3o70db5A_xAvR6Bal3taUeyzZrb3P-DerT-aMFInoT-Yy0cmZPGm/exec"; 
+        // 使用您最新的 GAS 連結
+        const SHEET_API_URL = "https://script.google.com/macros/s/AKfycbyNqAnGvSCjdIlxVuyPI4zakwxLfiHsHAlx-c65kGOqcm3Onxpwnu30_R5HVaQC5Tj4/exec"; 
 
         const GROUPS = [
             { id: 'A', name: 'A 組', animal: '鯊魚隊', color: 'bg-blue-600', icon: '🦈' },
@@ -126,52 +189,62 @@
             { id: 'NEWBIE', name: '新手組', animal: '小鴨隊', color: 'bg-yellow-400', icon: '🦆' },
         ];
 
+        const SKILLS = [
+            { id: '搖櫓', name: '搖櫓', icon: '👐', color: 'bg-amber-400' },
+            { id: '垂直踢水', name: '垂直踢水', icon: '🦵', color: 'bg-rose-400' },
+            { id: '單臂划水', name: '單臂划水', icon: '🏊', color: 'bg-sky-400' }
+        ];
+
         let records = [];
+        let skillRecords = [];
+        let activeTab = 'competition';
         let selectedGroupId = 'A';
         let isSubmitting = false;
 
         document.getElementById('input-date').value = new Date().toISOString().split('T')[0];
 
-        function getValue(obj, keys, isNumber = false) {
-            for (let k of Object.keys(obj)) {
-                const lowerK = k.toLowerCase().trim();
-                if (keys.some(key => lowerK === key)) {
-                    let val = obj[k];
-                    if (isNumber && typeof val === 'string' && (val.includes('T') || val.includes('-'))) continue;
-                    return isNumber ? (Number(val) || 0) : val;
-                }
+        function switchTab(tab) {
+            activeTab = tab;
+            document.getElementById('page-competition').classList.toggle('hidden', tab !== 'competition');
+            document.getElementById('page-skills').classList.toggle('hidden', tab !== 'skills');
+            document.getElementById('tab-competition').classList.toggle('tab-active', tab === 'competition');
+            document.getElementById('tab-skills').classList.toggle('tab-active', tab === 'skills');
+            
+            const title = document.getElementById('main-title');
+            if (tab === 'competition') {
+                title.innerHTML = '<i data-lucide="waves" class="text-blue-500"></i> 游泳進度大對抗';
+            } else {
+                title.innerHTML = '<i data-lucide="trophy" class="text-yellow-500"></i> 技巧檢核勳章牆';
             }
-            if (isNumber) {
-                for (let k in obj) {
-                    const v = obj[k];
-                    if (typeof v === 'number') return v;
-                    if (typeof v === 'string' && !isNaN(v) && !v.includes('-')) return Number(v);
-                }
-                return 0;
-            }
-            return '';
+            lucide.createIcons();
+            updateUI();
         }
 
-        lucide.createIcons();
-        renderGroupSelector();
-        fetchData();
-        setInterval(fetchData, 60000);
-
-        function renderGroupSelector() {
-            const container = document.getElementById('group-selector');
-            container.innerHTML = GROUPS.map(g => `
-                <button type="button" onclick="selectGroup('${g.id}')" 
-                    class="py-4 px-2 rounded-2xl text-[10px] font-black transition-all border-2 flex flex-col items-center gap-1.5
-                    ${selectedGroupId === g.id ? `${g.color} text-white border-transparent shadow-lg scale-105` : 'bg-white text-slate-400 border-slate-100 hover:border-blue-200'}">
-                    <span class="text-2xl">${g.icon}</span>
-                    <span>${g.id}</span>
-                </button>
-            `).join('');
-        }
-
-        function selectGroup(id) {
-            selectedGroupId = id;
-            renderGroupSelector();
+        // 智慧識別欄位內容，解決欄位偏移問題
+        function safeGet(obj, keys, type = 'string') {
+            const entries = Object.entries(obj).map(([k, v]) => [k.toLowerCase().trim(), v]);
+            for (let [k, v] of entries) {
+                if (keys.includes(k)) {
+                    if (type === 'number') {
+                        // 如果看起來像日期字串（包含 - 或 / 或 T），跳過尋找下一個數字
+                        if (v && typeof v === 'string' && (v.includes('-') || v.includes('/') || v.includes('T'))) continue;
+                        let n = Number(v);
+                        return isNaN(n) ? 0 : n;
+                    }
+                    if (type === 'date') {
+                        // 尋找看起來像日期的欄位
+                        if (v && (v.toString().includes('-') || v.toString().includes('/') || v instanceof Date)) return v;
+                        continue;
+                    }
+                    return v;
+                }
+            }
+            if (type === 'number') {
+                for (let [k, v] of entries) {
+                    if (!isNaN(v) && v !== '' && typeof v !== 'boolean' && !v.toString().includes('-') && !v.toString().includes('/')) return Number(v);
+                }
+            }
+            return type === 'number' ? 0 : (type === 'date' ? null : '');
         }
 
         async function fetchData() {
@@ -179,160 +252,243 @@
             try {
                 const response = await fetch(SHEET_API_URL);
                 const data = await response.json();
-                if (data.error) {
-                    document.getElementById('history-list').innerHTML = `<p class="text-center py-20 text-red-400 font-bold">${data.error}</p>`;
-                    return;
-                }
-                records = Array.isArray(data) ? data : [];
+                records = data.records || [];
+                
+                // [關鍵修正：排序邏輯優先按活動日期排序]
                 records.sort((a, b) => {
-                    const timeA = new Date(getValue(a, ['date', 'timestamp']) || 0).getTime();
-                    const timeB = new Date(getValue(b, ['date', 'timestamp']) || 0).getTime();
-                    return timeB - timeA;
+                    const dateA = new Date(safeGet(a, ['date']) || safeGet(a, ['timestamp']) || 0).getTime();
+                    const dateB = new Date(safeGet(b, ['date']) || safeGet(b, ['timestamp']) || 0).getTime();
+                    // 如果活動日期相同，則按上傳時間排序
+                    if (dateB === dateA) {
+                        return new Date(safeGet(b, ['timestamp']) || 0) - new Date(safeGet(a, ['timestamp']) || 0);
+                    }
+                    return dateB - dateA;
                 });
+
+                skillRecords = data.skills || [];
                 updateUI();
-                document.getElementById('last-updated').innerText = `同步完成：${new Date().toLocaleTimeString()}`;
+                document.getElementById('last-updated').innerText = `Sync: ${new Date().toLocaleTimeString()}`;
             } catch (error) {
                 console.error("Fetch error:", error);
-                document.getElementById('last-updated').innerText = "連線失敗";
+                document.getElementById('last-updated').innerText = "Offline Mode";
             }
         }
 
         function updateUI() {
-            const stats = { A: 0, B: 0, C: 0, NEWBIE: 0 };
+            const dropdowns = [document.getElementById('input-name-dropdown'), document.getElementById('skill-name-dropdown')];
+            const namesInSkills = skillRecords
+                .map(s => String(safeGet(s, ['name'])).trim())
+                .filter(n => n && n !== '' && n !== 'undefined');
             
+            dropdowns.forEach(dropdown => {
+                const currentVal = dropdown.value;
+                dropdown.innerHTML = '<option value="">請選擇姓名</option>' + 
+                    [...new Set(namesInSkills)].sort().map(n => `<option value="${n}">${n}</option>`).join('');
+                dropdown.value = currentVal;
+            });
+
+            if (activeTab === 'competition') updateCompetitionUI();
+            else updateSkillsUI();
+        }
+
+        function updateCompetitionUI() {
+            const stats = { A: 0, B: 0, C: 0, NEWBIE: 0 };
             records.forEach(r => {
-                const group = String(getValue(r, ['group'])).toUpperCase().trim();
-                const dist = getValue(r, ['distance'], true);
+                const group = String(safeGet(r, ['group'])).toUpperCase().trim();
                 if (stats[group] !== undefined) {
-                    stats[group] += dist;
+                    stats[group] += safeGet(r, ['distance'], 'number');
                 }
             });
 
-            const maxDistance = Math.max(...Object.values(stats), 0);
-            const poolLength = Math.max(10000, Math.ceil((maxDistance + 1) / 10000) * 10000);
-            document.getElementById('pool-goal-label').innerHTML = `目標 Goal: ${poolLength.toLocaleString()}m <i data-lucide="trophy" class="w-3 h-3 inline text-yellow-500"></i>`;
+            const maxVal = Math.max(...Object.values(stats), 0);
+            const poolLength = Math.max(10000, Math.ceil((maxVal + 1) / 10000) * 10000);
+            document.getElementById('pool-goal-label').innerHTML = `Goal: ${poolLength.toLocaleString()}m <i data-lucide="award" class="w-4 h-4 inline"></i>`;
 
-            const poolContainer = document.getElementById('pool-container');
-            poolContainer.innerHTML = GROUPS.map((g, index) => {
+            document.getElementById('pool-container').innerHTML = GROUPS.map((g, i) => {
                 const total = stats[g.id] || 0;
                 const progress = Math.min((total / poolLength) * 100, 100);
                 return `
-                    <div class="relative h-28 flex items-center pool-water border-b border-blue-900/30">
-                        <div class="absolute left-6 z-10 text-white/10 font-black italic text-6xl pointer-events-none select-none">${index + 1}</div>
-                        <div class="absolute left-20 z-20 pointer-events-none">
-                            <div class="text-white font-black text-sm tracking-[0.2em] drop-shadow-md uppercase">${g.name}</div>
-                            <div class="text-white/60 text-[10px] font-bold tracking-wider">${total.toLocaleString()} m</div>
+                    <div class="relative h-24 flex items-center pool-water border-b border-blue-900/30 group">
+                        <div class="absolute left-6 z-10 text-white/10 font-black italic text-5xl select-none italic">${i + 1}</div>
+                        <div class="absolute left-24 z-20 text-white pointer-events-none">
+                            <div class="font-black text-sm uppercase tracking-[0.2em] drop-shadow-md">${g.name}</div>
+                            <div class="text-[10px] opacity-70 font-bold">${total.toLocaleString()} m</div>
                         </div>
-                        <div class="flex-1 relative h-full mx-6">
+                        <div class="flex-1 relative h-full mx-10">
                             <div class="absolute swim-lane-container h-full flex flex-col justify-center items-center" style="left: ${progress}%; transform: translateX(-50%);">
-                                <div class="text-5xl animal-emoji animate-pulse">${g.icon}</div>
-                                <div class="bg-white/95 text-blue-700 text-[8px] font-black px-2.5 py-1 rounded-full shadow-lg mt-2 uppercase border border-blue-100">${g.id} TEAM</div>
+                                <div class="text-6xl animal-emoji animate-bounce">${g.icon}</div>
+                                <div class="bg-white/95 text-blue-700 text-[8px] font-black px-3 py-1 rounded-full shadow-lg mt-3 uppercase border border-blue-100 tracking-tighter">${g.id} TEAM</div>
                             </div>
                         </div>
-                        ${index < GROUPS.length - 1 ? '<div class="absolute -bottom-[3px] left-0 lane-rope"></div>' : ''}
+                        ${i < GROUPS.length - 1 ? '<div class="absolute -bottom-[3px] left-0 lane-rope"></div>' : ''}
                     </div>
                 `;
             }).join('');
 
-            const statsSummary = document.getElementById('stats-summary');
-            statsSummary.innerHTML = GROUPS.map(g => `
-                <div class="bg-white p-6 rounded-[1.5rem] shadow-sm border border-slate-100 hover:shadow-md transition-all">
-                    <div class="flex justify-between items-center mb-3">
-                        <span class="text-3xl">${g.icon}</span>
-                        <span class="text-[9px] font-black text-slate-300 uppercase tracking-[0.2em]">${g.id}</span>
+            // [修正：最新動態顯示為活動日期]
+            document.getElementById('history-list').innerHTML = records.slice(0, 30).map(r => {
+                const gId = String(safeGet(r, ['group'])).toUpperCase().trim();
+                const g = GROUPS.find(group => group.id === gId);
+                
+                // 優先尋找使用者選的運動日期 'date'
+                const rawDate = safeGet(r, ['date']) || safeGet(r, ['timestamp'], 'date');
+                let displayDate = '無日期';
+                if (rawDate) {
+                    try {
+                        const d = new Date(rawDate);
+                        if (!isNaN(d.getTime())) displayDate = d.toLocaleDateString('zh-TW');
+                    } catch(e) {}
+                }
+                const dist = safeGet(r, ['distance'], 'number');
+                return `
+                    <div class="flex items-center justify-between p-3 px-4 rounded-xl bg-slate-50 border border-slate-100 hover:bg-white transition-all shadow-sm group">
+                        <div class="flex items-center gap-3">
+                            <span class="text-xl">${g?.icon || '👤'}</span>
+                            <span class="font-black text-slate-800 text-sm">${safeGet(r, ['name'])}</span>
+                            <span class="text-[10px] text-slate-400 font-bold uppercase tracking-widest ml-2 border-l pl-2">📅 ${displayDate}</span>
+                        </div>
+                        <div class="text-right">
+                            <span class="text-blue-600 font-black text-sm">+${dist.toLocaleString()}m</span>
+                        </div>
                     </div>
-                    <p class="text-[10px] font-black text-slate-400 mb-1 uppercase tracking-wider">${g.animal}</p>
-                    <p class="text-2xl font-black text-slate-900 tracking-tighter">${(stats[g.id] || 0).toLocaleString()}<span class="text-xs ml-1 text-slate-300">M</span></p>
+                `;
+            }).join('');
+
+            document.getElementById('stats-summary').innerHTML = GROUPS.map(g => `
+                <div class="bg-white p-7 rounded-[2rem] shadow-xl border border-slate-50 hover:shadow-2xl transition-all">
+                    <div class="flex justify-between items-center mb-4">
+                        <span class="text-4xl">${g.icon}</span>
+                        <span class="text-[10px] font-black text-slate-300 uppercase tracking-widest">${g.id}組</span>
+                    </div>
+                    <p class="text-[11px] font-black text-slate-400 mb-1 uppercase tracking-widest">${g.animal}</p>
+                    <p class="text-3xl font-black text-slate-900 tracking-tighter">${(stats[g.id] || 0).toLocaleString()}<span class="text-xs ml-1 text-slate-300 uppercase font-black">m</span></p>
                 </div>
             `).join('');
-
-            const historyList = document.getElementById('history-list');
-            if (records.length === 0) {
-                historyList.innerHTML = '<p class="text-center py-24 text-slate-300 font-bold">目前無回報紀錄</p>';
-            } else {
-                historyList.innerHTML = records.map(r => {
-                    const groupVal = String(getValue(r, ['group'])).toUpperCase().trim();
-                    const g = GROUPS.find(group => group.id === groupVal);
-                    
-                    const rawDate = getValue(r, ['date', 'timestamp']);
-                    let displayDate = '無日期';
-                    if (rawDate) {
-                        try {
-                            const d = new Date(rawDate);
-                            if (!isNaN(d.getTime())) {
-                                displayDate = d.toLocaleDateString('zh-TW');
-                            }
-                        } catch(e) {}
-                    }
-
-                    const dist = getValue(r, ['distance'], true);
-                    return `
-                        <div class="flex items-center justify-between p-5 rounded-2xl bg-slate-50 border border-slate-100 hover:bg-white transition-all shadow-sm">
-                            <div class="flex items-center gap-5">
-                                <div class="w-12 h-12 rounded-2xl flex items-center justify-center text-2xl shadow-inner ${g?.color || 'bg-slate-300'} text-white">
-                                    ${g?.icon || '👤'}
-                                </div>
-                                <div>
-                                    <p class="font-black text-slate-800 text-base leading-tight">${getValue(r, ['name']) || '無名氏'}</p>
-                                    <p class="text-[10px] text-slate-400 font-black uppercase tracking-widest mt-1">📅 ${displayDate}</p>
-                                </div>
-                            </div>
-                            <div class="text-right">
-                                <span class="text-blue-600 font-black text-2xl">+${dist.toLocaleString()}</span>
-                                <span class="text-[10px] text-blue-300 font-bold ml-1">M</span>
-                            </div>
-                        </div>
-                    `;
-                }).join('');
-            }
             lucide.createIcons();
+        }
+
+        function updateSkillsUI() {
+            const wall = document.getElementById('skills-wall');
+            if (skillRecords.length === 0) {
+                wall.innerHTML = `<div class="col-span-full text-center py-24 text-slate-400 font-bold italic text-sm">試算表 Skills 分頁名單為空。</div>`;
+                return;
+            }
+
+            const sortedRecords = [...skillRecords].map(s => {
+                const skills = {
+                    '搖櫓': safeGet(s, ['搖櫓']) === true || safeGet(s, ['搖櫓']) === 'TRUE',
+                    '垂直踢水': safeGet(s, ['垂直踢水']) === true || safeGet(s, ['垂直踢水']) === 'TRUE',
+                    '單臂划水': safeGet(s, ['單臂划水']) === true || safeGet(s, ['單臂划水']) === 'TRUE'
+                };
+                const finishedCount = Object.values(skills).filter(v => v === true).length;
+                return { ...s, skills, finishedCount };
+            })
+            .sort((a, b) => b.finishedCount - a.finishedCount);
+
+            wall.innerHTML = sortedRecords.map(s => {
+                const name = String(safeGet(s, ['name'])).trim();
+                if (!name || name === 'undefined') return '';
+                
+                return `
+                    <div class="bg-white p-4 px-6 rounded-2xl shadow-sm border border-slate-100 flex flex-col md:flex-row md:items-center justify-between gap-4 hover:shadow-md transition-all ${s.finishedCount === 3 ? 'bg-amber-50/30 border-amber-100' : ''}">
+                        <div class="flex items-center gap-4 min-w-[150px]">
+                            <div class="w-10 h-10 rounded-full bg-slate-50 flex items-center justify-center font-black border border-slate-100 shadow-inner shrink-0 text-xs ${s.finishedCount === 3 ? 'bg-amber-100 border-amber-200' : ''}">
+                                ${s.finishedCount === 3 ? '🏆' : s.finishedCount}
+                            </div>
+                            <h3 class="text-lg font-black text-slate-800">${name}</h3>
+                        </div>
+                        <div class="flex items-center gap-6">
+                            ${SKILLS.map(skill => {
+                                const isDone = s.skills[skill.id];
+                                return `
+                                    <div class="flex items-center gap-2">
+                                        <div class="w-10 h-10 rounded-xl flex items-center justify-center text-xl transition-all duration-700 
+                                            ${isDone ? `${skill.color} text-white badge-glow shadow-md` : 'bg-slate-100 text-slate-200 grayscale opacity-20'}">
+                                            ${skill.icon}
+                                        </div>
+                                        <span class="text-[10px] font-black ${isDone ? 'text-slate-800' : 'text-slate-300'} uppercase hidden sm:inline tracking-tighter">${skill.name}</span>
+                                    </div>
+                                `;
+                            }).join('')}
+                        </div>
+                    </div>
+                `;
+            }).join('');
         }
 
         document.getElementById('swim-form').addEventListener('submit', async (e) => {
             e.preventDefault();
             if (isSubmitting) return;
-
-            const name = document.getElementById('input-name').value.trim();
+            const name = document.getElementById('input-name-dropdown').value;
             const distance = document.getElementById('input-distance').value;
             const date = document.getElementById('input-date').value;
-
+            if(!name) { showToast("⚠️ 請選擇學員姓名！", "bg-red-500"); return; }
             isSubmitting = true;
             const btn = document.getElementById('submit-btn');
-            btn.innerHTML = `<i data-lucide="loader-2" class="w-6 h-6 animate-spin"></i> 同步中...`;
-            btn.classList.add('opacity-70', 'cursor-not-allowed');
+            btn.innerHTML = `<i data-lucide="loader-2" class="w-6 h-6 animate-spin mx-auto text-white"></i>`;
             lucide.createIcons();
-
-            const swimData = { name, distance: Number(distance), group: selectedGroupId, date: date };
-
             try {
-                records.unshift({ ...swimData, timestamp: new Date().toISOString() });
+                records.unshift({ name, distance: Number(distance), date, group: selectedGroupId, timestamp: new Date().toISOString() });
                 updateUI();
-
                 await fetch(SHEET_API_URL, {
                     method: 'POST',
                     mode: 'no-cors',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(swimData)
+                    body: JSON.stringify({ name, distance: Number(distance), date, group: selectedGroupId })
                 });
-
+                showToast(`🎉 ${name} 提交成功！`, "bg-green-500 shadow-green-200");
                 document.getElementById('input-distance').value = '';
-                showToast(`🎉 ${name} 提交成功！`, "bg-green-500 shadow-green-100");
                 setTimeout(fetchData, 3000);
-            } catch (error) {
-                showToast("❌ 提交失敗", "bg-red-500 shadow-red-100");
             } finally {
                 isSubmitting = false;
-                btn.innerHTML = `送出進度 🌊`;
-                btn.classList.remove('opacity-70', 'cursor-not-allowed');
+                btn.innerHTML = "送出進度 🌊";
+            }
+        });
+
+        document.getElementById('skill-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            if (isSubmitting) return;
+            const name = document.getElementById('skill-name-dropdown').value;
+            const skillName = document.getElementById('skill-type-input').value;
+            if(!name) { showToast("⚠️ 請先選擇您的姓名！", "bg-orange-500"); return; }
+            isSubmitting = true;
+            const btn = document.getElementById('skill-submit-btn');
+            btn.innerHTML = `<i data-lucide="loader-2" class="w-6 h-6 animate-spin mx-auto"></i>`;
+            lucide.createIcons();
+            try {
+                await fetch(SHEET_API_URL, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    body: JSON.stringify({ type: 'skill', name, skillName })
+                });
+                showToast(`✨ 太棒了！${name} 完成了【${skillName}】`, "bg-indigo-600 shadow-indigo-200");
+                setTimeout(fetchData, 3000);
+            } finally {
+                isSubmitting = false;
+                btn.innerHTML = "幫我打勾！";
             }
         });
 
         function showToast(text, colorClass) {
             const toast = document.getElementById('toast');
             toast.innerText = text;
-            toast.className = `fixed bottom-10 left-1/2 -translate-x-1/2 px-8 py-4 rounded-2xl shadow-2xl text-white font-black z-50 transition-all duration-500 opacity-100 translate-y-0 ${colorClass}`;
+            toast.className = `fixed bottom-12 left-1/2 -translate-x-1/2 px-10 py-5 rounded-full shadow-2xl text-white font-black z-50 transition-all duration-500 opacity-100 translate-y-0 ${colorClass} flex items-center gap-3`;
             setTimeout(() => { toast.classList.add('opacity-0', 'translate-y-10'); }, 3000);
         }
+
+        function renderGroupSelector() {
+            document.getElementById('group-selector').innerHTML = GROUPS.map(g => `
+                <button type="button" onclick="selectedGroupId='${g.id}';renderGroupSelector();" 
+                    class="py-4 px-2 rounded-2xl text-[10px] font-black transition-all border-2 flex flex-col items-center gap-1.5
+                    ${selectedGroupId === g.id ? `${g.color} text-white border-transparent shadow-lg scale-105` : 'bg-white text-slate-400 border-slate-100 hover:border-blue-100'}">
+                    <span class="text-3xl">${g.icon}</span>
+                    <span>${g.id}組</span>
+                </button>
+            `).join('');
+        }
+
+        renderGroupSelector();
+        fetchData();
+        setInterval(fetchData, 60000);
     </script>
 </body>
 </html>
