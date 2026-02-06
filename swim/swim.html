@@ -149,9 +149,10 @@
                         <div>
                             <label class="block text-[10px] font-black mb-2 opacity-80 uppercase tracking-widest text-white">解鎖哪一項？</label>
                             <select id="skill-type-input" class="w-full p-5 rounded-2xl bg-white/10 border border-white/20 focus:bg-white focus:text-slate-900 outline-none font-black transition-all shadow-xl appearance-none cursor-pointer">
-                                <option value="搖櫓">👐 搖櫓 (Sculling)</option>
-                                <option value="垂直踢水">🦵 垂直踢水 (Vertical Kick)</option>
-                                <option value="單臂划水">🏊 單臂划水 (Single Arm)</option>
+                                <option value="自我介紹">📢 自我介紹</option>
+                                <option value="搖櫓">👐 搖櫓</option>
+                                <option value="垂直踢水">🦵 垂直踢水</option>
+                                <option value="單臂划水">🏊 單臂划水</option>
                             </select>
                         </div>
                         <button type="submit" id="skill-submit-btn" class="bg-yellow-400 hover:bg-yellow-500 text-indigo-900 py-5 px-10 rounded-2xl font-black text-xl shadow-2xl active:scale-95 transition-all">
@@ -176,10 +177,9 @@
     </div>
 
     <!-- 通知元件 -->
-    <div id="toast" class="fixed bottom-12 left-1/2 -translate-x-1/2 px-10 py-5 rounded-full shadow-2xl text-white font-black z-50 transition-all duration-500 opacity-0 translate-y-10 pointer-events-none flex items-center gap-3"></div>
+    <div id="toast" class="fixed bottom-12 left-1/2 -translate-x-1/2 px-10 py-5 rounded-full shadow-2xl text-white font-black z-50 transition-all duration-500 opacity-100 translate-y-10 pointer-events-none flex items-center gap-3"></div>
 
     <script>
-        // 使用您最新的 GAS 連結
         const SHEET_API_URL = "https://script.google.com/macros/s/AKfycbyNqAnGvSCjdIlxVuyPI4zakwxLfiHsHAlx-c65kGOqcm3Onxpwnu30_R5HVaQC5Tj4/exec"; 
 
         const GROUPS = [
@@ -189,7 +189,9 @@
             { id: 'NEWBIE', name: '新手組', animal: '小鴨隊', color: 'bg-yellow-400', icon: '🦆' },
         ];
 
+        // 更新技巧清單：加入自我介紹
         const SKILLS = [
+            { id: '自我介紹', name: '自我介紹', icon: '📢', color: 'bg-emerald-400' },
             { id: '搖櫓', name: '搖櫓', icon: '👐', color: 'bg-amber-400' },
             { id: '垂直踢水', name: '垂直踢水', icon: '🦵', color: 'bg-rose-400' },
             { id: '單臂划水', name: '單臂划水', icon: '🏊', color: 'bg-sky-400' }
@@ -220,19 +222,16 @@
             updateUI();
         }
 
-        // 智慧識別欄位內容，解決欄位偏移問題
         function safeGet(obj, keys, type = 'string') {
             const entries = Object.entries(obj).map(([k, v]) => [k.toLowerCase().trim(), v]);
             for (let [k, v] of entries) {
                 if (keys.includes(k)) {
                     if (type === 'number') {
-                        // 如果看起來像日期字串（包含 - 或 / 或 T），跳過尋找下一個數字
                         if (v && typeof v === 'string' && (v.includes('-') || v.includes('/') || v.includes('T'))) continue;
                         let n = Number(v);
                         return isNaN(n) ? 0 : n;
                     }
                     if (type === 'date') {
-                        // 尋找看起來像日期的欄位
                         if (v && (v.toString().includes('-') || v.toString().includes('/') || v instanceof Date)) return v;
                         continue;
                     }
@@ -254,11 +253,9 @@
                 const data = await response.json();
                 records = data.records || [];
                 
-                // [關鍵修正：排序邏輯優先按活動日期排序]
                 records.sort((a, b) => {
                     const dateA = new Date(safeGet(a, ['date']) || safeGet(a, ['timestamp']) || 0).getTime();
                     const dateB = new Date(safeGet(b, ['date']) || safeGet(b, ['timestamp']) || 0).getTime();
-                    // 如果活動日期相同，則按上傳時間排序
                     if (dateB === dateA) {
                         return new Date(safeGet(b, ['timestamp']) || 0) - new Date(safeGet(a, ['timestamp']) || 0);
                     }
@@ -325,12 +322,9 @@
                 `;
             }).join('');
 
-            // [修正：最新動態顯示為活動日期]
             document.getElementById('history-list').innerHTML = records.slice(0, 30).map(r => {
                 const gId = String(safeGet(r, ['group'])).toUpperCase().trim();
                 const g = GROUPS.find(group => group.id === gId);
-                
-                // 優先尋找使用者選的運動日期 'date'
                 const rawDate = safeGet(r, ['date']) || safeGet(r, ['timestamp'], 'date');
                 let displayDate = '無日期';
                 if (rawDate) {
@@ -375,13 +369,13 @@
             }
 
             const sortedRecords = [...skillRecords].map(s => {
-                const skills = {
-                    '搖櫓': safeGet(s, ['搖櫓']) === true || safeGet(s, ['搖櫓']) === 'TRUE',
-                    '垂直踢水': safeGet(s, ['垂直踢水']) === true || safeGet(s, ['垂直踢水']) === 'TRUE',
-                    '單臂划水': safeGet(s, ['單臂划水']) === true || safeGet(s, ['單臂划水']) === 'TRUE'
-                };
-                const finishedCount = Object.values(skills).filter(v => v === true).length;
-                return { ...s, skills, finishedCount };
+                const skillsMap = {};
+                SKILLS.forEach(skill => {
+                    const val = safeGet(s, [skill.id.toLowerCase()]);
+                    skillsMap[skill.id] = val === true || val === 'TRUE';
+                });
+                const finishedCount = Object.values(skillsMap).filter(v => v === true).length;
+                return { ...s, skills: skillsMap, finishedCount };
             })
             .sort((a, b) => b.finishedCount - a.finishedCount);
 
@@ -389,11 +383,13 @@
                 const name = String(safeGet(s, ['name'])).trim();
                 if (!name || name === 'undefined') return '';
                 
+                const isMax = s.finishedCount === SKILLS.length;
+                
                 return `
-                    <div class="bg-white p-4 px-6 rounded-2xl shadow-sm border border-slate-100 flex flex-col md:flex-row md:items-center justify-between gap-4 hover:shadow-md transition-all ${s.finishedCount === 3 ? 'bg-amber-50/30 border-amber-100' : ''}">
+                    <div class="bg-white p-4 px-6 rounded-2xl shadow-sm border border-slate-100 flex flex-col md:flex-row md:items-center justify-between gap-4 hover:shadow-md transition-all ${isMax ? 'bg-amber-50/30 border-amber-100' : ''}">
                         <div class="flex items-center gap-4 min-w-[150px]">
-                            <div class="w-10 h-10 rounded-full bg-slate-50 flex items-center justify-center font-black border border-slate-100 shadow-inner shrink-0 text-xs ${s.finishedCount === 3 ? 'bg-amber-100 border-amber-200' : ''}">
-                                ${s.finishedCount === 3 ? '🏆' : s.finishedCount}
+                            <div class="w-10 h-10 rounded-full bg-slate-50 flex items-center justify-center font-black border border-slate-100 shadow-inner shrink-0 text-xs ${isMax ? 'bg-amber-100 border-amber-200' : ''}">
+                                ${isMax ? '🏆' : s.finishedCount}
                             </div>
                             <h3 class="text-lg font-black text-slate-800">${name}</h3>
                         </div>
