@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>游泳保證班進度追蹤 - 2026 競技版</title>
+    <title>游泳保證班進度追蹤</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
@@ -137,11 +137,10 @@
                         <h2 class="text-3xl font-black mb-2 flex items-center gap-3 justify-center md:justify-start">
                             解鎖新技能！ <i data-lucide="sparkles" class="text-yellow-400"></i>
                         </h2>
-                        <p class="opacity-70 font-bold uppercase tracking-widest text-xs">Skills Automatic Checker</p>
                     </div>
                     <form id="skill-form" class="flex-1 grid grid-cols-1 md:grid-cols-3 gap-6 items-end w-full">
                         <div>
-                            <label class="block text-[10px] font-black mb-2 opacity-80 uppercase tracking-widest text-white">姓名 (來自 Skills 名單)</label>
+                            <label class="block text-[10px] font-black mb-2 opacity-80 uppercase tracking-widest text-white">姓名</label>
                             <select id="skill-name-dropdown" required class="w-full p-5 rounded-2xl bg-white/10 border border-white/20 focus:bg-white focus:text-slate-900 outline-none font-black transition-all shadow-xl appearance-none cursor-pointer">
                                 <option value="">選擇學員</option>
                             </select>
@@ -151,8 +150,11 @@
                             <select id="skill-type-input" class="w-full p-5 rounded-2xl bg-white/10 border border-white/20 focus:bg-white focus:text-slate-900 outline-none font-black transition-all shadow-xl appearance-none cursor-pointer">
                                 <option value="自我介紹">📢 自我介紹</option>
                                 <option value="搖櫓">👐 搖櫓</option>
-                                <option value="垂直踢水">🦵 垂直踢水</option>
                                 <option value="單臂划水">🏊 單臂划水</option>
+                                <option value="垂直踢水">🦵 垂直踢水</option>
+                                <option value="叮噹手">🔔 叮噹手</option>
+                                <option value="636">🔢 636</option>
+                                
                             </select>
                         </div>
                         <button type="submit" id="skill-submit-btn" class="bg-yellow-400 hover:bg-yellow-500 text-indigo-900 py-5 px-10 rounded-2xl font-black text-xl shadow-2xl active:scale-95 transition-all">
@@ -172,12 +174,12 @@
             <p class="text-slate-400 text-[10px] font-black tracking-[0.4em] uppercase">
                 Keep Swimming • Every Meter Counts
             </p>
-            <p class="mt-3 text-slate-300 text-[10px] font-bold uppercase">Copyright © 2026 Janice Swimming Club.</p>
+            <p class="mt-3 text-slate-300 text-[10px] font-bold uppercase">Copyright © 2026 Janice</p>
         </footer>
     </div>
 
     <!-- 通知元件 -->
-    <div id="toast" class="fixed bottom-12 left-1/2 -translate-x-1/2 px-10 py-5 rounded-full shadow-2xl text-white font-black z-50 transition-all duration-500 opacity-100 translate-y-10 pointer-events-none flex items-center gap-3"></div>
+    <div id="toast" class="fixed bottom-12 left-1/2 -translate-x-1/2 px-10 py-5 rounded-full shadow-2xl text-white font-black z-50 transition-all duration-500 opacity-0 translate-y-10 pointer-events-none flex items-center gap-3"></div>
 
     <script>
         const SHEET_API_URL = "https://script.google.com/macros/s/AKfycbyNqAnGvSCjdIlxVuyPI4zakwxLfiHsHAlx-c65kGOqcm3Onxpwnu30_R5HVaQC5Tj4/exec"; 
@@ -189,12 +191,14 @@
             { id: 'NEWBIE', name: '新手組', animal: '小鴨隊', color: 'bg-yellow-400', icon: '🦆' },
         ];
 
-        // 更新技巧清單：加入自我介紹
+        // 核心技巧配置：新增「叮噹手」與「636」
         const SKILLS = [
             { id: '自我介紹', name: '自我介紹', icon: '📢', color: 'bg-emerald-400' },
             { id: '搖櫓', name: '搖櫓', icon: '👐', color: 'bg-amber-400' },
+            { id: '單臂划水', name: '單臂划水', icon: '🏊', color: 'bg-sky-400' },
             { id: '垂直踢水', name: '垂直踢水', icon: '🦵', color: 'bg-rose-400' },
-            { id: '單臂划水', name: '單臂划水', icon: '🏊', color: 'bg-sky-400' }
+            { id: '叮噹手', name: '叮噹手', icon: '🔔', color: 'bg-orange-400' },
+            { id: '636', name: '636', icon: '🔢', color: 'bg-purple-400' }            
         ];
 
         let records = [];
@@ -393,7 +397,7 @@
                             </div>
                             <h3 class="text-lg font-black text-slate-800">${name}</h3>
                         </div>
-                        <div class="flex items-center gap-6">
+                        <div class="flex items-center gap-4 sm:gap-6 flex-wrap md:flex-nowrap">
                             ${SKILLS.map(skill => {
                                 const isDone = s.skills[skill.id];
                                 return `
@@ -402,7 +406,7 @@
                                             ${isDone ? `${skill.color} text-white badge-glow shadow-md` : 'bg-slate-100 text-slate-200 grayscale opacity-20'}">
                                             ${skill.icon}
                                         </div>
-                                        <span class="text-[10px] font-black ${isDone ? 'text-slate-800' : 'text-slate-300'} uppercase hidden sm:inline tracking-tighter">${skill.name}</span>
+                                        <span class="text-[10px] font-black ${isDone ? 'text-slate-800' : 'text-slate-300'} uppercase hidden lg:inline tracking-tighter">${skill.name}</span>
                                     </div>
                                 `;
                             }).join('')}
