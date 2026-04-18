@@ -38,7 +38,7 @@
 <body class="bg-slate-50 text-slate-900 pb-40 transition-all duration-500 theme-1" id="appBody">
 
     <script>
-        const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbx7shqoZI_SGyOcB0tfUE69P0B3tE8qOYAiJrXr0T4CBkUUcW0zW4-pqtQznIhUHaVA/exec";
+        const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxnzXuPVdQxcq1bw-QvRiq5xaPCIzaHYtHGTVaF-PIsWrKyTClkSkDb3QpBQS5_QRWL/exec";
 
         const STAGE_CONFIG = {
             1: { name: "第 1 週", action: "核心", start: "2026/04/13", icon: "award" },
@@ -112,6 +112,7 @@
                         <p id="panelActionLabel" class="text-white/50 text-[10px] font-bold tracking-widest uppercase font-black">本週任務</p>
                         <div class="flex items-baseline gap-2 mt-1">
                             <h2 id="totalCount" class="text-6xl font-black italic">0</h2>
+                            <span class="text-sm font-bold opacity-40 uppercase">/ 4 次達標</span>
                         </div>
                         <p id="goalStatusText" class="text-[11px] font-bold mt-2 bg-black/20 px-3 py-1 rounded-full inline-block">請先選取選手</p>
                     </div>
@@ -162,7 +163,7 @@
         </div>
     </div>
 
-    <!-- 姓名選擇器 Modal (省略重複結構，邏輯已更新) -->
+    <!-- 姓名選擇器 Modal -->
     <div id="nameModal" class="fixed inset-0 bg-black/60 z-[100] hidden items-center justify-center p-4 backdrop-blur-sm">
         <div class="bg-white w-full max-w-md rounded-[32px] max-h-[80vh] flex flex-col overflow-hidden shadow-2xl transition-all scale-95 opacity-0" id="modalContainer">
             <div class="p-6 border-b flex flex-col gap-1">
@@ -194,6 +195,7 @@
         };
 
         function switchTab(tab) {
+            if (!state) return;
             state.activeTab = tab;
             document.getElementById('page-report').classList.toggle('hidden', tab !== 'report');
             document.getElementById('page-results').classList.toggle('hidden', tab !== 'results');
@@ -212,6 +214,7 @@
         }
 
         function handleStageChange(val) {
+            if (!state) return;
             state.stage = parseInt(val);
             const cfg = STAGE_CONFIG[state.stage];
             document.getElementById('appBody').className = `bg-slate-50 text-slate-900 pb-40 transition-all duration-500 theme-${state.stage}`;
@@ -224,11 +227,13 @@
         }
 
         function handleLeaderboardStageChange(val) {
+            if (!state) return;
             state.leaderboardStage = parseInt(val);
             fetchLeaderboard(state.leaderboardStage);
         }
 
         function renderDays() {
+            if (!state) return;
             const container = document.getElementById('daysGrid');
             const cfg = STAGE_CONFIG[state.stage];
             const startD = new Date(cfg.start);
@@ -246,12 +251,13 @@
         }
 
         function toggleDay(i) { 
-            if (state.dataSyncing || !state.selectedName) return; 
+            if (!state || state.dataSyncing || !state.selectedName) return; 
             state.reports[i] = state.reports[i] === 1 ? 0 : 1; 
             renderDays(); updateUI(); 
         }
 
         function updateUI() {
+            if (!state) return;
             const count = state.reports.reduce((a, b) => a + b, 0);
             document.getElementById('totalCount').innerText = count;
             const btn = document.getElementById('submitBtn'); const btnText = document.getElementById('submitBtnText');
@@ -277,6 +283,7 @@
         }
 
         async function fetchMembers() {
+            if (!state) return;
             state.syncStatus = 'loading';
             try { 
                 const r = await fetch(`${GAS_WEB_APP_URL}?action=members&t=${Date.now()}`); 
@@ -289,6 +296,7 @@
         }
 
         async function fetchUserData(n, s) {
+            if (!state) return;
             state.dataSyncing = true; 
             document.getElementById('dataSyncOverlay').classList.remove('hidden'); 
             document.getElementById('dataSyncOverlay').classList.add('flex'); 
@@ -317,14 +325,15 @@
                         else if (rank === 2) icon = `<div class="w-8 h-8 bg-slate-300 rounded-full flex items-center justify-center shadow-md"><i data-lucide="award" class="w-4 h-4 text-white"></i></div>`;
                         else if (rank === 3) icon = `<div class="w-8 h-8 bg-orange-300 rounded-full flex items-center justify-center shadow-sm"><i data-lucide="medal" class="w-4 h-4 text-white"></i></div>`;
                         
-                        // 進度條邏輯：若是單週排行，分母是 7；若是總排行 (stage 11)，分母是 70
+                        // 進度條與達標邏輯優化
                         const denom = targetStage === 11 ? 70 : 7;
+                        const barWidth = Math.min(100, (item.count / denom) * 100);
                         const isG = targetStage === 11 ? item.count >= 40 : item.count >= GOAL_COUNT;
 
                         return `<div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-4 transition-all hover:scale-[1.01]">${icon}<div class="flex-1 min-w-0"><div class="flex justify-between items-center mb-1"><span class="font-black text-slate-800 truncate text-sm">${item.name} 
                             <span class="text-[9px] text-slate-400 ml-1 font-bold">${item.group}</span></span>
                             <span class="text-xs font-black ${isG ? 'text-emerald-500' : 'text-blue-600'} italic font-black">${item.count} 次</span>
-                            </div><div class="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden"><div class="h-full transition-all duration-1000 ${isG ? 'bg-emerald-500 shadow-sm' : 'bg-blue-500'}" style="width: ${(item.count/denom)*100}%"></div></div></div></div>`;
+                            </div><div class="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden"><div class="h-full transition-all duration-1000 ${isG ? 'bg-emerald-500 shadow-sm' : 'bg-blue-500'}" style="width: ${barWidth}%"></div></div></div></div>`;
                     }).join('');
                     lucide.createIcons();
                 } else { list.innerHTML = `<p class="py-20 text-center font-black text-slate-400 italic">目前尚無紀錄</p>`; }
@@ -332,6 +341,7 @@
         }
 
         function renderSelection() {
+            if (!state) return;
             const list = document.getElementById('selectionList'); const b = document.getElementById('modalBreadcrumb');
             if (state.syncStatus === 'loading') { list.innerHTML = `<div class="py-20 text-center font-black text-slate-400">正在載入名單...</div>`; return; }
             if (!state.selectedGroup) {
@@ -344,15 +354,21 @@
             lucide.createIcons();
         }
 
-        function selectGroup(g) { state.selectedGroup = g; renderSelection(); }
-        function resetSelection() { state.selectedGroup = null; renderSelection(); }
-        function selectName(n, g) { state.selectedName = n; state.selectedGroup = g; localStorage.setItem('trbb_user', JSON.stringify({name: n, group: g})); closeNameModal(); fetchUserData(n, state.stage); }
+        function selectGroup(g) { if (state) state.selectedGroup = g; renderSelection(); }
+        function resetSelection() { if (state) state.selectedGroup = null; renderSelection(); }
+        function selectName(n, g) { 
+            if (state) {
+                state.selectedName = n; state.selectedGroup = g; 
+                localStorage.setItem('trbb_user', JSON.stringify({name: n, group: g})); 
+                closeNameModal(); fetchUserData(n, state.stage); 
+            }
+        }
         function openNameModal() { document.getElementById('nameModal').classList.remove('hidden'); document.getElementById('nameModal').classList.add('flex'); setTimeout(() => { document.getElementById('modalContainer').classList.remove('scale-95', 'opacity-0'); document.getElementById('modalContainer').classList.add('scale-100', 'opacity-100'); }, 10); renderSelection(); }
         function closeNameModal() { document.getElementById('modalContainer').classList.add('scale-95', 'opacity-0'); setTimeout(() => { document.getElementById('nameModal').classList.add('hidden'); }, 200); }
-        function applyRememberedUser() { const saved = localStorage.getItem('trbb_user'); if (saved) { try { const { name, group } = JSON.parse(saved); if (state.memberList.some(m => m.name === name)) { state.selectedName = name; state.selectedGroup = group; updateUI(); fetchUserData(name, state.stage); } } catch(e) {} } }
+        function applyRememberedUser() { const saved = localStorage.getItem('trbb_user'); if (saved && state) { try { const { name, group } = JSON.parse(saved); if (state.memberList.some(m => m.name === name)) { state.selectedName = name; state.selectedGroup = group; updateUI(); fetchUserData(name, state.stage); } } catch(e) {} } }
 
         async function handleSubmit() {
-            if (!state.selectedName || state.dataSyncing || state.loading) return;
+            if (!state || !state.selectedName || state.dataSyncing || state.loading) return;
             const loader = document.getElementById('loader'); const text = document.getElementById('loaderText'); state.loading = true; updateUI();
             loader.classList.remove('hidden'); loader.classList.add('flex'); text.innerText = "週資料更新中...";
             const total = state.reports.reduce((a, b) => a + b, 0);
