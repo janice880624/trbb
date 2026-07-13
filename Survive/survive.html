@@ -34,7 +34,7 @@
         <div class="max-w-5xl mx-auto w-full flex justify-between items-center text-left">
             <div class="flex items-center gap-2">
                 <i data-lucide="medal" class="text-blue-600 w-5 h-5"></i>
-                <span class="font-black text-base md:text-xl tracking-tight text-slate-800 uppercase leading-none">第 17 期 TRBB 鐵人生存戰</span>
+                <span class="font-black text-base md:text-xl tracking-tight text-slate-800 uppercase leading-none">第 18 期 TRBB 鐵人生存戰</span>
             </div>
             <div class="flex gap-1 md:gap-2">
                 <button onclick="switchTab('report')" id="tab-report-btn" class="px-3 md:px-4 py-1.5 rounded-xl text-xs md:text-sm font-black transition-all bg-blue-600 text-white shadow-md">回報</button>
@@ -58,7 +58,7 @@
                         <option value="5">第 4 週 8/3 ~ 8/9</option>
                         <option value="6">第 5 週 8/10 ~ 8/19</option>
                         <option value="7">第 6 週 8/17 ~ 8/23</option>
-                        <option value="8">第 7 週 5/24 ~ 5/30</option>
+                        <option value="8">第 7 週 8/24 ~ 8/30</option>
                         <option value="9">第 8 週 8/31 ~ 9/6</option>
                         <option value="10">第 9 週 9/7 ~ 7/13</option>
                         <option value="11">第 10 週 9/14 ~ 9/20</option>
@@ -112,7 +112,7 @@
     <!-- 英雄榜頁面 -->
     <main id="page-results" class="hidden max-w-5xl mx-auto p-4 md:p-6 space-y-6 pb-32 text-left">
         <div class="flex flex-col md:flex-row gap-4 items-center justify-between text-left">
-            <h2 class="text-xl md:text-2xl font-black text-slate-800 flex items-center gap-2 italic leading-none text-left"><i data-lucide="award" class="text-orange-500"></i> 三鐵英雄榜</h2>
+            <h2 class="text-xl md:text-2xl font-black text-slate-800 flex items-center gap-2 italic leading-none text-left"><i data-lucide="award" class="text-orange-500"></i>三鐵英雄榜</h2>
             <div class="flex gap-2 w-full md:w-auto text-left">
                 <select id="resultWeekSelect" onchange="renderRankings()" class="flex-1 md:flex-none bg-white border border-slate-200 p-2 md:p-2.5 rounded-xl text-xs md:text-sm font-black focus:ring-2 focus:ring-blue-500 outline-none text-left">
                     <option value="overall">開賽至今總累計</option>
@@ -123,7 +123,7 @@
                         <option value="5">第 4 週 8/3 ~ 8/9</option>
                         <option value="6">第 5 週 8/10 ~ 8/19</option>
                         <option value="7">第 6 週 8/17 ~ 8/23</option>
-                        <option value="8">第 7 週 5/24 ~ 5/30</option>
+                        <option value="8">第 7 週 8/24 ~ 8/30</option>
                         <option value="9">第 8 週 8/31 ~ 9/6</option>
                         <option value="10">第 9 週 9/7 ~ 7/13</option>
                         <option value="11">第 10 週 9/14 ~ 9/20</option>
@@ -185,9 +185,9 @@
     <script>
         const THRESHOLDS = { swim: 750, bike: 20, run: 5 };
         const WEEK_START_DATES = {
-            1: "2026/04/06", 2: "2026/04/13", 3: "2026/04/20", 4: "2026/04/27",
-            5: "2026/05/04", 6: "2026/05/11", 7: "2026/05/18", 8: "2026/05/25",
-            9: "2026/06/01", 10: "2026/06/08", 11: "2026/06/15"
+            1: "2026/07/06", 2: "2026/07/13", 3: "2026/07/20", 4: "2026/07/27",
+            5: "2026/08/03", 6: "2026/08/10", 7: "2026/08/17", 8: "2026/07/24",
+            9: "2026/08/31", 10: "2026/09/07", 11: "2026/07/14"
         };
 
         let state = { 
