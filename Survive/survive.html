@@ -3,11 +3,22 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>TRBB 生存戰</title>
+    <title>TRBB 生存戰第19期</title>
+    <meta name="theme-color" content="#fff4e6">
+    <script>
+        (function () {
+            var t = null;
+            try { t = localStorage.getItem("trbb_theme"); } catch (e) {}
+            if (t !== "light" && t !== "dark") t = "light"; // 預設淺色
+            document.documentElement.setAttribute("data-theme", t);
+            var m = document.querySelector('meta[name="theme-color"]');
+            if (m) m.setAttribute("content", t === "dark" ? "#170e22" : "#fff4e6");
+        })();
+    </script>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700;900&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Creepster&family=Noto+Sans+TC:wght@400;700;900&display=swap');
         body { font-family: 'Noto Sans TC', sans-serif; -webkit-tap-highlight-color: transparent; }
         input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
         .bg-tri-gradient { background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); }
@@ -19,6 +30,84 @@
         @keyframes bounce-in { 0% { transform: scale(0.3); opacity: 0; } 50% { transform: scale(1.1); opacity: 1; } 100% { transform: scale(1); } }
         .animate-success { animation: bounce-in 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
         option:disabled { color: #cbd5e1; background-color: #f8fafc; }
+
+        /* ===== 🎃 萬聖節主題（淺色 / 暗色）===== */
+        :root { /* 淺色：糖果南瓜 */
+                --page:#fff4e6; --soft:#fbead6; --card:#ffffff; --card2:#f6e3cf; --hover:#f0d6bb; --line:#f0d6bb;
+                --ink:#2a1640; --mist:#7a6390; --dim:#b7a3c6; --pumpkin:#e8620c; --candle:#ffc65c;
+                --weekend:#fff0dc; --bar:rgba(255,244,230,.9); --field:rgba(255,255,255,.7);
+                --ok:#5a9e1f; --ok-bg:rgba(90,158,31,.1); --ok-ink:#3f7a10;
+                --bad:#e03b3b; --bad-bg:rgba(224,59,59,.08); --bad-ink:#c62828;
+                --glow:rgba(255,160,60,.18); color-scheme: light; }
+        :root[data-theme="dark"] { /* 暗色：午夜 */
+                --page:#170e22; --soft:#1f1330; --card:#25172f; --card2:#2f1f3d; --hover:#3a2850; --line:#3b2950;
+                --ink:#f3e9dc; --mist:#a893b8; --dim:#6e5a80; --pumpkin:#ff7a1a;
+                --weekend:#2d1a2c; --bar:rgba(23,14,34,.88); --field:rgba(23,14,34,.55);
+                --ok:#8fd14f; --ok-bg:rgba(143,209,79,.12); --ok-ink:#b6f27a;
+                --bad:#ff5c5c; --bad-bg:rgba(255,92,92,.12); --bad-ink:#ff9a9a;
+                --glow:rgba(255,198,92,.12); color-scheme: dark; }
+        html body { background: radial-gradient(circle at 85% -10%, var(--glow) 0, transparent 35%), var(--page); color: var(--ink); transition: background-color .3s, color .3s; }
+        html body *, html body ::before, html body ::after { border-color: var(--line); }
+        .totalTimesDisplay-ref { font-family: 'Creepster', 'Noto Sans TC', cursive; font-weight: 400; letter-spacing: .05em; }
+
+        .bg-white { background-color: var(--card) !important; }
+        .bg-white\/90 { background-color: var(--bar) !important; }
+        .bg-white\/60 { background-color: var(--field) !important; }
+        .bg-slate-50, .active\:bg-slate-50:active { background-color: var(--soft) !important; }
+        .bg-slate-100, .hover\:bg-slate-100:hover { background-color: var(--card2) !important; }
+        .bg-slate-200, .hover\:bg-slate-200:hover { background-color: var(--hover) !important; }
+        .border-slate-100, .border-slate-200 { border-color: var(--line) !important; }
+        .border-transparent { border-color: transparent !important; }
+        .text-slate-900, .text-slate-800, .text-slate-700 { color: var(--ink) !important; }
+        .text-slate-500, .text-slate-400 { color: var(--mist) !important; }
+        .text-slate-300 { color: var(--dim) !important; }
+        .text-blue-600 { color: var(--pumpkin) !important; }
+        .text-blue-300 { color: var(--candle) !important; }
+        .bg-blue-600 { background-color: var(--pumpkin) !important; color: #2a1200 !important; }
+        .border-blue-600 { border-color: var(--pumpkin) !important; border-top-color: transparent !important; }
+        .focus\:ring-blue-500:focus { --tw-ring-color: var(--pumpkin) !important; }
+        input::placeholder { color: var(--dim); }
+
+        /* 週末卡片與日期標籤 */
+        .bg-amber-50\/60 { background-color: var(--weekend) !important; }
+        .bg-amber-200 { background-color: var(--pumpkin) !important; color: #2a1200 !important; }
+        .bg-slate-900 { background-color: #4b2a6b !important; }
+
+        /* 達標 / 未達標輸入框 */
+        .border-green-500 { border-color: var(--ok) !important; }
+        .bg-green-50 { background-color: var(--ok-bg) !important; }
+        .text-green-700, .text-green-600 { color: var(--ok-ink) !important; }
+        .ring-green-500\/5 { --tw-ring-color: var(--ok-bg) !important; }
+        .border-red-500 { border-color: var(--bad) !important; }
+        .bg-red-50 { background-color: var(--bad-bg) !important; }
+        .text-red-700 { color: var(--bad-ink) !important; }
+
+        /* 英雄榜：第一名與分數顏色（淺色時加深） */
+        .bg-yellow-50 { background-color: rgba(255,122,26,.14) !important; }
+        .border-yellow-100 { border-color: rgba(255,122,26,.4) !important; }
+        :root:not([data-theme="dark"]) .text-red-400 { color:#dc2626 !important; }
+        :root:not([data-theme="dark"]) .text-sky-400 { color:#0284c7 !important; }
+        :root:not([data-theme="dark"]) .text-orange-400 { color:#ea580c !important; }
+        :root:not([data-theme="dark"]) .text-lime-400 { color:#4d7c0f !important; }
+
+        /* 夜空面板（兩種主題都保留夜空） */
+        .bg-tri-gradient { background: radial-gradient(circle at 78% 22%, #3d2558 0, transparent 55%), linear-gradient(160deg, #2a1640 0%, #120a1b 100%); }
+        .status-panel-ref.bg-green-600 { background: radial-gradient(circle at 75% 70%, #ffb14a 0, transparent 55%), linear-gradient(150deg, #ff7a1a 0%, #b8410a 100%) !important; }
+        .status-panel-ref .moon { position:absolute; top:14px; right:22%; width:38px; height:38px; border-radius:50%; background:#f7e7b8; box-shadow:0 0 30px 6px rgba(247,231,184,.35); transition: opacity .5s; }
+        .status-panel-ref.bg-green-600 .moon { opacity:0; }
+        .status-panel-ref .bats { position:absolute; top:10px; right:34%; opacity:.55; }
+
+        /* 南瓜燈：達標時點亮 */
+        .jack .face { fill:#1a0d06; transition: fill .4s, filter .4s; }
+        .jack .body { fill:#e8661a; }
+        .status-panel-ref.bg-green-600 .jack .face { fill:#ffe27a; filter: drop-shadow(0 0 6px #ffd54a); }
+        .status-panel-ref.bg-green-600 .jack { animation: celebrate .8s ease-in-out 2; }
+        .halloween-badge { background: var(--pumpkin); color:#2a1200; }
+
+        .custom-scroll::-webkit-scrollbar-thumb { background: var(--hover) !important; }
+        option { background: var(--card); color: var(--ink); }
+        option:disabled { color: var(--dim) !important; background-color: var(--soft) !important; }
+        @media (prefers-reduced-motion: reduce) { .status-panel-ref .jack { animation: none !important; } }
     </style>
 </head>
 <body class="bg-slate-50 text-slate-900 pb-32 transition-colors duration-300">
@@ -33,10 +122,12 @@
     <nav class="bg-white border-b border-slate-200 sticky top-0 z-50 px-4 py-3 shadow-sm h-[52px] flex items-center">
         <div class="max-w-5xl mx-auto w-full flex justify-between items-center text-left">
             <div class="flex items-center gap-2">
-                <i data-lucide="medal" class="text-blue-600 w-5 h-5"></i>
+                <i data-lucide="ghost" class="text-blue-600 w-5 h-5"></i>
                 <span class="font-black text-base md:text-xl tracking-tight text-slate-800 uppercase leading-none">第 19 期 TRBB 鐵人生存戰</span>
+                <span class="hidden sm:inline text-[10px] md:text-xs font-black px-2 py-0.5 rounded-full halloween-badge">🎃 萬聖節版</span>
             </div>
-            <div class="flex gap-1 md:gap-2">
+            <div class="flex gap-1 md:gap-2 items-center">
+                <button onclick="toggleTheme()" id="themeToggle" aria-label="切換淺色／暗色" title="切換淺色／暗色" class="w-8 h-8 md:w-9 md:h-9 flex items-center justify-center rounded-xl text-blue-600 bg-slate-100 hover:bg-slate-200 transition-all"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg></button>
                 <button onclick="switchTab('report')" id="tab-report-btn" class="px-3 md:px-4 py-1.5 rounded-xl text-xs md:text-sm font-black transition-all bg-blue-600 text-white shadow-md">回報</button>
                 <button onclick="switchTab('results')" id="tab-results-btn" class="px-3 md:px-4 py-1.5 rounded-xl text-xs md:text-sm font-black transition-all text-slate-400 bg-slate-100 hover:bg-slate-200">英雄榜</button>
             </div>
@@ -81,14 +172,15 @@
                         </div>
                         <p class="targetTip-ref text-xs mt-2 font-bold text-blue-300 transition-all italic text-left">門檻：游 750m / 騎 20km / 跑 5km</p>
                     </div>
-                    <div class="statusIcon-ref absolute -right-4 -bottom-4 opacity-10 rotate-12 transition-all"><i data-lucide="award" class="w-48 h-48"></i></div>
+                    <div class="moon"></div><svg class="bats" width="70" height="26" viewBox="0 0 70 26" aria-hidden="true" fill="#0b0610"><path d="M10 10 q3-6 6 0 q3-4 6 2 q-4-1-6 3 q-2-4-6-3 q-1-1 0-2z"/><path d="M40 4 q4-7 8 0 q4-5 8 2 q-5-1-8 4 q-3-5-8-4 q-1-1 0-2z"/><path d="M28 18 q2-4 4 0 q2-3 4 1 q-3 0-4 2 q-1-2-4-2z"/></svg>
+                    <div class="statusIcon-ref absolute right-6 -bottom-6 transition-all"><svg class="jack w-44 h-44" viewBox="0 0 120 110" aria-hidden="true"><path d="M58 10 q4-10 14-8 q-8 4-8 12z" fill="#5e8a2c"/><ellipse class="body" cx="38" cy="62" rx="30" ry="40"/><ellipse class="body" cx="82" cy="62" rx="30" ry="40"/><ellipse class="body" cx="60" cy="62" rx="30" ry="44" style="filter:brightness(1.08)"/><path class="face" d="M30 50 l14-12 l6 16z M90 50 l-14-12 l-6 16z M56 62 l4-8 l4 8z M28 74 q32 26 64 0 l-8 2 l-4 8 l-8-6 l-8 8 l-8-8 l-8 6 l-4-8z"/></svg></div>
                 </section>
             </div>
         </div>
 
         <section id="statusPanel-mobile" class="lg:hidden status-panel-ref rounded-2xl p-3 shadow-lg text-white transition-all duration-300 bg-tri-gradient sticky top-[52px] z-40 overflow-hidden flex items-center min-h-[64px] border-b border-white/10 mx-[-4px] text-left">
             <div class="relative z-10 flex items-center gap-3 w-full px-1 text-left">
-                <div class="statusIcon-ref opacity-20 shrink-0 text-left"><i data-lucide="award" class="w-6 h-6"></i></div>
+                <div class="statusIcon-ref shrink-0 text-left"><svg class="jack w-9 h-9" viewBox="0 0 120 110" aria-hidden="true"><path d="M58 10 q4-10 14-8 q-8 4-8 12z" fill="#5e8a2c"/><ellipse class="body" cx="38" cy="62" rx="30" ry="40"/><ellipse class="body" cx="82" cy="62" rx="30" ry="40"/><ellipse class="body" cx="60" cy="62" rx="30" ry="44" style="filter:brightness(1.08)"/><path class="face" d="M30 50 l14-12 l6 16z M90 50 l-14-12 l-6 16z M56 62 l4-8 l4 8z M28 74 q32 26 64 0 l-8 2 l-4 8 l-8-6 l-8 8 l-8-8 l-8 6 l-4-8z"/></svg></div>
                 <div class="flex-1 flex items-center justify-between text-left">
                     <div class="flex flex-col text-left">
                         <p class="text-white/70 text-[10px] font-black tracking-wider uppercase text-left">本週達標次數</p>
@@ -112,7 +204,7 @@
     <!-- 英雄榜頁面 -->
     <main id="page-results" class="hidden max-w-5xl mx-auto p-4 md:p-6 space-y-6 pb-32 text-left">
         <div class="flex flex-col md:flex-row gap-4 items-center justify-between text-left">
-            <h2 class="text-xl md:text-2xl font-black text-slate-800 flex items-center gap-2 italic leading-none text-left"><i data-lucide="award" class="text-orange-500"></i>三鐵英雄榜</h2>
+            <h2 class="text-xl md:text-2xl font-black text-slate-800 flex items-center gap-2 italic leading-none text-left"><span>🦇</span>三鐵英雄榜</h2>
             <div class="flex gap-2 w-full md:w-auto text-left">
                 <select id="resultWeekSelect" onchange="renderRankings()" class="flex-1 md:flex-none bg-white border border-slate-200 p-2 md:p-2.5 rounded-xl text-xs md:text-sm font-black focus:ring-2 focus:ring-blue-500 outline-none text-left">
                     <option value="overall">開賽至今總累計</option>
@@ -178,7 +270,7 @@
         <div class="bg-white rounded-[24px] p-8 flex flex-col items-center shadow-2xl border border-white/20 animate-in fade-in zoom-in duration-300 max-w-[260px] w-full min-h-[220px] justify-center text-center text-left text-left text-left">
             <div id="loader-spinner" class="w-16 h-16 border-4 border-blue-600 border-t-transparent rounded-full animate-spin text-left text-left"></div>
             <div id="loader-success" class="hidden flex flex-col items-center animate-success text-left text-left text-left text-left text-left text-left text-left"><i data-lucide="check" class="w-12 h-12 text-green-600 stroke-[3] text-left text-left text-left text-left text-left text-left"></i></div>
-            <p id="loaderText" class="mt-6 font-black text-slate-800 tracking-wider text-sm italic text-left text-left text-left text-left text-left text-left">資料同步中...</p>
+            <p id="loaderText" class="mt-6 font-black text-slate-800 tracking-wider text-sm italic text-left text-left text-left text-left text-left text-left">南瓜燈點燈中...</p>
         </div>
     </div>
 
@@ -219,6 +311,7 @@
         // --- 核心優化：優先抓取名單 ---
         window.onload = async () => { 
             resetDaysState(); 
+            renderThemeIcon();
             lucide.createIcons(); 
             checkWeekAvailability();
             
@@ -341,6 +434,29 @@
             select.value = latestAvailableWeek;
         }
 
+        const THEME_ICONS = {
+            moon: '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>',
+            sun: '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>'
+        };
+
+        function renderThemeIcon() {
+            const dark = document.documentElement.getAttribute('data-theme') === 'dark';
+            const btn = document.getElementById('themeToggle');
+            if (!btn) return;
+            btn.innerHTML = dark ? THEME_ICONS.sun : THEME_ICONS.moon;
+            btn.setAttribute('aria-label', dark ? '切換成淺色' : '切換成暗色');
+            btn.title = dark ? '切換成淺色' : '切換成暗色';
+        }
+
+        function toggleTheme() {
+            const next = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+            document.documentElement.setAttribute('data-theme', next);
+            try { localStorage.setItem('trbb_theme', next); } catch (e) {}
+            const m = document.querySelector('meta[name="theme-color"]');
+            if (m) m.setAttribute('content', next === 'dark' ? '#170e22' : '#fff4e6');
+            renderThemeIcon();
+        }
+
         function switchTab(tab) {
             document.getElementById('page-report').classList.toggle('hidden', tab !== 'report');
             document.getElementById('page-results').classList.toggle('hidden', tab !== 'results');
@@ -431,7 +547,7 @@
                 else { panel.classList.add('bg-tri-gradient'); panel.classList.remove('bg-green-600'); }
             });
             document.querySelectorAll('.targetTip-ref').forEach(tip => {
-                if (totalTimes >= 4) { tip.innerText = "🔥 恭喜！本週目標已達成！"; tip.classList.add('text-white'); tip.classList.remove('text-blue-300'); }
+                if (totalTimes >= 4) { tip.innerText = "🎃 恭喜！本週目標已達成，糖果到手！"; tip.classList.add('text-white'); tip.classList.remove('text-blue-300'); }
                 else { tip.innerText = "門檻：游 750m / 騎 20km / 跑 5km"; tip.classList.remove('text-white'); tip.classList.add('text-blue-300'); }
             });
 
@@ -464,6 +580,7 @@
                                 <span class="font-black text-slate-800 tracking-tight text-2xl leading-none text-left text-left">
                                     ${getFormattedDate(state.weekNumber, idx)}
                                 </span>
+                                ${getFormattedDate(state.weekNumber, idx) === '10/31' ? '<span class="mt-1.5 self-start text-[10px] font-black px-2 py-0.5 rounded-full halloween-badge">🎃 Halloween</span>' : ''}
                             </div>
                         </div>
                         <div class="grid grid-cols-3 gap-3 mt-auto text-left text-left text-left">
@@ -501,10 +618,10 @@
             };
 
             const sports = [
-                { id: 'times', label: '🔥 勤奮王', color: 'red', unit: '次' },
-                { id: 'swim', label: '🏊 游泳排名', color: 'blue', unit: 'km' },
+                { id: 'times', label: '🎃 勤奮王', color: 'red', unit: '次' },
+                { id: 'swim', label: '🏊 游泳排名', color: 'sky', unit: 'km' },
                 { id: 'bike', label: '🚴 騎車排名', color: 'orange', unit: 'km' },
-                { id: 'run', label: '🏃 跑步排名', color: 'green', unit: 'km' }
+                { id: 'run', label: '🏃 跑步排名', color: 'lime', unit: 'km' }
             ];
 
             let hasData = false;
@@ -516,12 +633,12 @@
                 return `<div class="bg-white rounded-3xl p-5 md:p-6 shadow-sm border border-slate-100 h-full text-left text-left"><h3 class="font-black text-slate-700 mb-4 flex items-center gap-2 border-b pb-2 italic uppercase text-left text-sm md:text-base text-left text-left">${sport.label}</h3><div class="space-y-2 md:space-y-3 text-left text-left text-left">${validList.length > 0 ? validList.map((p, idx) => {
                     const score = getScore(p, sport.id);
                     const medals = ['🥇', '🥈', '🥉']; const formattedScore = sport.id === 'times' ? Math.round(score) : score.toFixed(1);
-                    return `<div class="flex items-center justify-between p-3 rounded-2xl ${idx === 0 ? 'bg-yellow-50 border border-yellow-100' : 'bg-slate-50'} text-left text-left text-left text-left text-left text-left text-left"><div class="flex items-center gap-3 text-left text-left text-left text-left text-left text-left text-left"><span>${medals[idx]}</span><div class="flex flex-col text-left text-left text-left text-left text-left text-left text-left text-left"><span class="font-black text-slate-800 text-xs md:text-sm text-left text-left text-left text-left text-left text-left text-left text-left">${p.name}</span><span class="text-[8px] md:text-[9px] font-bold text-slate-400 uppercase text-left text-left text-left text-left text-left text-left text-left text-left text-left">${p.group}</span></div></div><span class="font-black text-${sport.color}-600 text-base md:text-lg leading-none text-left text-left text-left text-left text-left text-left text-left text-left text-left">${formattedScore}<small class="text-[8px] md:text-[9px] ml-0.5 opacity-60 text-left text-left text-left text-left text-left text-left text-left text-left text-left">${sport.unit}</small></span></div>`;
-                }).join('') : '<p class="text-xs text-slate-300 italic py-2 text-left">目前尚無數據</p>'}</div></div>`;
+                    return `<div class="flex items-center justify-between p-3 rounded-2xl ${idx === 0 ? 'bg-yellow-50 border border-yellow-100' : 'bg-slate-50'} text-left text-left text-left text-left text-left text-left text-left"><div class="flex items-center gap-3 text-left text-left text-left text-left text-left text-left text-left"><span>${medals[idx]}</span><div class="flex flex-col text-left text-left text-left text-left text-left text-left text-left text-left"><span class="font-black text-slate-800 text-xs md:text-sm text-left text-left text-left text-left text-left text-left text-left text-left">${p.name}</span><span class="text-[8px] md:text-[9px] font-bold text-slate-400 uppercase text-left text-left text-left text-left text-left text-left text-left text-left text-left">${p.group}</span></div></div><span class="font-black text-${sport.color}-400 text-base md:text-lg leading-none text-left text-left text-left text-left text-left text-left text-left text-left text-left">${formattedScore}<small class="text-[8px] md:text-[9px] ml-0.5 opacity-60 text-left text-left text-left text-left text-left text-left text-left text-left text-left">${sport.unit}</small></span></div>`;
+                }).join('') : '<p class="text-xs text-slate-300 italic py-2 text-left">目前空蕩蕩，只有幽靈 👻</p>'}</div></div>`;
             }).join('');
 
             if (!hasData) {
-                container.innerHTML = `<div class="col-span-full py-12 text-center text-slate-400 font-bold italic text-left">該週暫無參賽數據</div>`;
+                container.innerHTML = `<div class="col-span-full py-12 text-center text-slate-400 font-bold italic text-left">這週還沒人出沒 🕸️</div>`;
             }
         }
 
@@ -537,7 +654,7 @@
             try {
                 await fetch(GAS_WEB_APP_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify({ userName: state.selectedName, weekNumber: state.weekNumber, days: state.days }) });
                 spinner.classList.add('hidden'); success.classList.remove('hidden');
-                lucide.createIcons(); text.innerText = "提交成功！辛苦了！";
+                lucide.createIcons(); text.innerText = "提交成功！不給糖就搗蛋 🍬";
                 // 提交成功後，更新本地快取的個人數據
                 state.currentUserData.weeklyRawData[state.weekNumber] = state.days.flatMap(d => [d.swim ? d.swim/1000 : "", d.bike, d.run]);
                 await new Promise(resolve => setTimeout(resolve, 1500));
