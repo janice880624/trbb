@@ -1,0 +1,876 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>聖誕趴賓客報到系統</title>
+<script src="https://cdn.jsdelivr.net/npm/lucide@0.263.0/dist/umd/lucide.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Noto+Serif+TC:wght@600;700;900&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #18362f;
+    --cream: #f7f1e5;
+    --paper: #fffdf8;
+    --gold: #c79a45;
+    --sage: #759682;
+    --berry: #9b3c35;
+    --muted: #6c7f79;
+    --line: rgba(24, 54, 47, .14);
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    min-height: 100vh;
+    font-family: "DM Sans", "Noto Sans TC", sans-serif;
+    color: var(--ink);
+    background: radial-gradient(circle at left top, #fffdf8, #f1eadb);
+  }
+  button, input { font: inherit; }
+  button { -webkit-tap-highlight-color: transparent; cursor: pointer; }
+  .serif { font-family: "Noto Serif TC", serif; }
+  .hidden { display: none !important; }
+
+  .app-shell { position: relative; overflow-x: hidden; min-height: 100vh; }
+  .app-shell::before {
+    content: "";
+    position: fixed; inset: 0; pointer-events: none; opacity: .32;
+    background-image:
+      linear-gradient(rgba(24,54,47,.035) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(24,54,47,.035) 1px, transparent 1px);
+    background-size: 36px 36px;
+    mask-image: linear-gradient(to bottom, black, transparent 74%);
+  }
+
+  /* ── Topbar ── */
+  .topbar {
+    position: sticky; top: 0; z-index: 30;
+    border-bottom: 1px solid var(--line);
+    backdrop-filter: blur(16px);
+    background: rgba(255,253,248,.9);
+  }
+  .topbar-inner {
+    max-width: 1180px; margin: 0 auto; padding: .75rem 1rem;
+    display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+  }
+  .brand-wrap { display: flex; align-items: center; gap: .75rem; }
+  .brand-mark {
+    width: 42px; height: 42px; display: grid; place-items: center;
+    border-radius: 50% 50% 42% 58%;
+    background: var(--ink); color: #f4d99b;
+    box-shadow: 0 10px 24px rgba(24,54,47,.15);
+    transform: rotate(-4deg);
+  }
+  .brand-kicker { margin: 0; font-size: 11px; font-weight: 700; letter-spacing: .18em; color: #9a7738; }
+  .brand-name { margin: 0; font-size: 18px; font-weight: 700; }
+  .demo-badge {
+    font-size: 12px; font-weight: 700; color: #8a672b;
+    border: 1px solid rgba(199,154,69,.42); background: rgba(255,253,248,.72);
+    border-radius: 999px; padding: .35rem .75rem;
+  }
+
+  .page-wrap {
+    width: 100%; max-width: 1180px; margin: 0 auto;
+    padding: clamp(1rem, 3vw, 2.5rem);
+    position: relative; z-index: 1;
+  }
+
+  /* ── Hero ── */
+  .hero-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1.05fr) minmax(320px, .95fr);
+    gap: clamp(1.25rem, 4vw, 4rem);
+    align-items: center;
+    min-height: 560px;
+  }
+  .eyebrow {
+    display: inline-flex; align-items: center; gap: .55rem;
+    padding: .45rem .75rem;
+    border: 1px solid rgba(199,154,69,.42); border-radius: 999px;
+    background: rgba(255,253,248,.72);
+    color: #8a672b; font-size: .82rem; font-weight: 700; letter-spacing: .12em;
+  }
+  .hero-title {
+    margin: 1.25rem 0 0; max-width: 720px;
+    font-size: clamp(2.2rem, 5.4vw, 3.5rem); font-weight: 900;
+    letter-spacing: -.04em; line-height: 1.12;
+  }
+  .hero-copy { margin-top: 1.15rem; max-width: 560px; line-height: 1.85; font-size: 1.05rem; color: #566d66; }
+  .hero-hint { margin-top: 1.75rem; display: flex; align-items: center; gap: .6rem; font-size: .9rem; color: var(--muted); }
+  .hero-hint svg { color: var(--gold); width: 20px; height: 20px; }
+
+  /* ── Panel ── */
+  .panel {
+    position: relative; overflow: hidden;
+    background: var(--paper);
+    border: 1px solid var(--line); border-radius: 28px;
+    box-shadow: 0 28px 70px rgba(38,62,53,.11);
+  }
+  .panel::after {
+    content: ""; position: absolute; top: -70px; right: -70px;
+    width: 180px; height: 180px; border: 1px solid rgba(199,154,69,.22);
+    border-radius: 50%; pointer-events: none;
+  }
+  .panel-body { padding: clamp(1.25rem, 3vw, 2rem); position: relative; z-index: 1; }
+  .panel-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; margin-bottom: 1.5rem; }
+  .panel-title { margin: 0; font-size: 24px; font-weight: 700; }
+  .panel-sub { margin: .5rem 0 0; font-size: 14px; line-height: 1.6; color: var(--muted); }
+  .icon-chip {
+    width: 44px; height: 44px; flex: 0 0 auto; border-radius: 50%;
+    display: grid; place-items: center; background: #eef3ed; color: #426757;
+  }
+
+  /* ── Form / Search ── */
+  .field-label { display: block; margin-bottom: .55rem; font-weight: 700; }
+  .input-wrap { position: relative; }
+  .input-wrap > svg { position: absolute; left: 1rem; top: 50%; transform: translateY(-50%); width: 20px; height: 20px; color: #7b8d87; pointer-events: none; }
+  .field-control {
+    width: 100%; padding: .95rem 2.75rem .95rem 3rem;
+    border: 1px solid rgba(24,54,47,.2); border-radius: 15px;
+    background: rgba(255,255,255,.72); color: var(--ink);
+    outline: none; transition: .2s ease;
+  }
+  .field-control:focus { border-color: var(--gold); box-shadow: 0 0 0 4px rgba(199,154,69,.15); background: #fff; }
+  .field-control::placeholder { color: #9aaaa5; }
+  #clearBtn {
+    position: absolute; right: .75rem; top: 50%; transform: translateY(-50%);
+    width: 30px; height: 30px; border: none; border-radius: 50%;
+    background: transparent; color: #7b8d87; font-size: 20px; line-height: 1; display: none;
+  }
+  #clearBtn:hover { background: rgba(24,54,47,.06); }
+  .help-text { margin: .55rem 0 0; font-size: 13px; line-height: 1.6; color: #71837d; }
+
+  #dropdown {
+    display: none; margin-top: .6rem; overflow: hidden;
+    border: 1px solid var(--line); border-radius: 16px; background: #fff;
+    box-shadow: 0 14px 34px rgba(38,62,53,.12);
+    animation: pop .2s ease both;
+  }
+  .drop-item {
+    width: 100%; display: flex; justify-content: space-between; align-items: center; gap: 1rem;
+    padding: .8rem 1rem; text-align: left;
+    background: transparent; border: none; border-bottom: 1px solid var(--line);
+    color: var(--ink); transition: .15s ease;
+  }
+  .drop-item:last-of-type { border-bottom: none; }
+  .drop-item:hover { background: #fffbf2; }
+  .drop-item .d-tbl { font-size: 13px; font-weight: 800; color: #79571e; background: #fff4d9; border-radius: 10px; padding: .2rem .6rem; }
+  #noResult { padding: .9rem 1rem; font-size: 14px; color: var(--muted); text-align: center; }
+
+  /* ── Guest card ── */
+  #guestPanel { display: none; margin-top: 1.25rem; animation: pop .25s ease both; }
+  .guest-card { border: 1px solid var(--line); border-radius: 18px; padding: 1rem; background: rgba(255,255,255,.7); margin-bottom: 1rem; }
+  .gc-top { display: flex; justify-content: space-between; align-items: center; gap: .75rem; margin-bottom: .5rem; }
+  .guest-name { font-weight: 800; font-size: 1.2rem; word-break: break-word; }
+  .gc-meta { display: flex; align-items: center; gap: .5rem; flex-wrap: wrap; font-size: .9rem; color: var(--muted); }
+  .table-badge {
+    display: inline-flex; align-items: center; justify-content: center;
+    min-width: 58px; min-height: 36px; padding: .3rem .7rem;
+    border-radius: 12px; background: #fff4d9; color: #79571e; font-weight: 800;
+  }
+  .id-badge {
+    display: inline-flex; align-items: center; justify-content: center;
+    min-height: 36px; padding: .3rem .7rem; border-radius: 12px;
+    background: #eef3ed; color: #426757; font-weight: 800; font-size: .9rem;
+  }
+  .id-badge:empty { display: none; }
+  .d-id { font-size: 12px; font-weight: 700; color: #6c7f79; margin-left: .5rem; }
+  .badge {
+    display: inline-flex; align-items: center; gap: .35rem; flex: 0 0 auto;
+    border-radius: 999px; padding: .38rem .7rem; font-size: .82rem; font-weight: 800;
+  }
+  .badge-pending { background: #f1eee7; color: #6a6963; }
+  .badge-done { background: #dceade; color: #276044; }
+
+  .tm-label { margin-bottom: .6rem; font-size: .88rem; font-weight: 700; color: var(--muted); }
+  .tm-row {
+    display: flex; justify-content: space-between; align-items: center; gap: .75rem;
+    padding: .6rem .85rem; margin-bottom: .45rem;
+    border: 1px solid var(--line); border-radius: 14px; background: #fff;
+  }
+  .tm-row.me { background: #fffbf2; border-color: rgba(199,154,69,.6); }
+  .tm-name { font-weight: 700; }
+  .tm-rel { margin-left: .5rem; font-size: 12px; color: #8a9a95; }
+  .done-mark { font-size: .82rem; font-weight: 800; color: #276044; white-space: nowrap; }
+
+  .primary-button, .compact-button {
+    display: inline-flex; align-items: center; justify-content: center; gap: .5rem;
+    font-weight: 700; transition: .2s ease; border: 1px solid transparent;
+  }
+  .primary-button {
+    width: 100%; min-height: 48px; padding: .8rem 1.1rem; margin-top: .35rem;
+    border-radius: 14px; background: var(--ink); color: #fff;
+    box-shadow: 0 8px 22px rgba(24,54,47,.22);
+  }
+  .primary-button:hover:not(:disabled) { transform: translateY(-1px); }
+  .primary-button:disabled { opacity: .62; cursor: wait; }
+  .compact-button {
+    min-height: 36px; padding: .4rem .8rem; border-radius: 10px;
+    font-size: .84rem; border-color: var(--line); background: #fff; color: var(--ink);
+  }
+  .compact-button:hover { border-color: var(--gold); }
+
+  .spinner {
+    width: 17px; height: 17px; flex: 0 0 auto;
+    border: 2px solid currentColor; border-right-color: transparent; border-radius: 50%;
+    animation: spin .7s linear infinite; display: inline-block;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .checkin-status {
+    display: none; align-items: center; gap: .65rem;
+    margin: .25rem 0 .75rem; padding: .8rem 1rem;
+    border: 1px solid rgba(199,154,69,.45); border-radius: 14px;
+    background: #fff8e6; color: #79571e; font-weight: 700; font-size: .95rem;
+  }
+  .checkin-status.show { display: flex; }
+  #guestPanel.is-busy .primary-button,
+  #guestPanel.is-busy .compact-button { pointer-events: none; opacity: .6; }
+  #guestPanel.is-busy .primary-button.is-loading,
+  #guestPanel.is-busy .compact-button.is-loading { opacity: 1; }
+
+  button:focus-visible, input:focus-visible { outline: 3px solid rgba(199,154,69,.5); outline-offset: 3px; }
+
+  /* ── Sections ── */
+  .section-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 1rem; margin-bottom: 1.25rem; }
+  .section-title { margin: .9rem 0 0; font-size: clamp(1.6rem, 3.5vw, 2.25rem); font-weight: 900; letter-spacing: -.02em; }
+  .section-desc { margin: .5rem 0 0; color: #566d66; line-height: 1.7; max-width: 620px; }
+
+  /* ── Map ── */
+  .map-panel { padding: clamp(.75rem, 2vw, 1.25rem); }
+  .map-outer {
+    position: relative; overflow: hidden;
+    border: 1px solid var(--line); border-radius: 20px; background: #fbf7ec;
+    touch-action: none; cursor: grab; user-select: none;
+  }
+  .map-outer:active { cursor: grabbing; }
+  .map-inner { width: 100%; transform-origin: 0 0; will-change: transform; }
+  #venueMap { width: 100%; display: block; }
+  .map-controls { position: absolute; bottom: 12px; right: 12px; display: flex; gap: .4rem; }
+  .map-btn {
+    width: 38px; height: 38px; border-radius: 12px; display: grid; place-items: center;
+    border: 1px solid var(--line); background: rgba(255,253,248,.95); color: var(--ink);
+    font-size: 18px; line-height: 1; box-shadow: 0 8px 20px rgba(24,54,47,.12); transition: .2s ease;
+  }
+  .map-btn:hover { border-color: var(--gold); }
+
+  .map-tooltip {
+    display: none; position: fixed; z-index: 100; min-width: 140px; pointer-events: none;
+    background: var(--ink); color: #fff; border-radius: 15px; padding: .75rem .95rem;
+    box-shadow: 0 18px 45px rgba(24,54,47,.28); animation: pop .15s ease both;
+  }
+  .tt-title { font-size: 12px; font-weight: 700; color: #f4d99b; margin-bottom: .35rem; }
+  .tt-guest { font-size: 13px; padding: 1px 0; }
+  .tt-guest.ck { color: #b9dcc5; }
+
+  #tableDetail {
+    display: none; margin-top: 1rem; padding: 1rem 1.1rem;
+    border: 1px solid var(--line); border-radius: 18px; background: rgba(255,251,242,.9);
+    animation: pop .2s ease both;
+  }
+  .td-title { margin-bottom: .75rem; font-weight: 800; }
+  .td-chips { display: flex; flex-wrap: wrap; gap: .5rem; }
+  .td-chip {
+    padding: .45rem .85rem; border-radius: 12px; font-size: .9rem; font-weight: 600;
+    border: 1px solid var(--line); background: #fff; color: var(--ink); transition: .2s ease;
+  }
+  .td-chip:hover { border-color: var(--gold); background: #fffbf2; }
+  .td-chip.ck { background: #dceade; color: #276044; border-color: rgba(39,96,68,.25); }
+
+  /* ── Stats ── */
+  .metrics-grid { display: grid; grid-template-columns: 1.5fr 1fr 1fr 1fr; gap: 1rem; }
+  .metric-card {
+    border: 1px solid var(--line); border-radius: 22px; padding: 1.25rem;
+    background: rgba(255,253,248,.86); box-shadow: 0 14px 38px rgba(38,62,53,.07);
+  }
+  .metric-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; }
+  .metric-label { margin: 0; font-weight: 700; }
+  .metric-sub { margin: .25rem 0 0; font-size: .88rem; color: var(--muted); }
+  .metric-num { margin: .25rem 0 0; font-size: 1.9rem; font-weight: 900; line-height: 1.1; }
+  .metric-row { display: flex; align-items: center; gap: .75rem; }
+  .metric-dot { width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; flex: 0 0 auto; }
+  .progress-track { height: 10px; margin-top: 1rem; border-radius: 999px; background: #e8e4da; overflow: hidden; }
+  .progress-fill { height: 100%; width: 0; border-radius: inherit; background: linear-gradient(to right, #759682, #c79a45); transition: width .45s ease; }
+
+  footer { padding: 1rem 1rem 3rem; text-align: center; font-size: 13px; color: var(--muted); position: relative; z-index: 1; }
+
+  /* ── Toast ── */
+  #toast {
+    display: none; position: fixed; z-index: 80; right: 1rem; bottom: 1rem;
+    width: min(390px, calc(100% - 2rem));
+    border-radius: 15px; padding: .9rem 1rem; font-weight: 600;
+    background: var(--ink); color: #fff; box-shadow: 0 18px 45px rgba(24,54,47,.22);
+    animation: pop .25s ease both;
+  }
+  #toast.warning { background: #7a5a1e; }
+  #toast.error { background: #8c3833; }
+
+  @keyframes pop { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+  @media (prefers-reduced-motion: reduce) { *:not(.spinner) { animation: none !important; transition: none !important; } html { scroll-behavior: auto; } }
+
+  @media (max-width: 900px) {
+    .hero-grid { grid-template-columns: 1fr; min-height: auto; padding: 2rem 0; }
+    .hero-copy-wrap { text-align: center; }
+    .hero-copy { margin-left: auto; margin-right: auto; }
+    .hero-hint { justify-content: center; }
+    .metrics-grid { grid-template-columns: 1fr 1fr; }
+    .metrics-grid .metric-card:first-child { grid-column: 1 / -1; }
+  }
+  @media (max-width: 640px) {
+    .page-wrap { padding: 1rem; }
+    .panel { border-radius: 22px; }
+    .demo-badge { display: none !important; }
+    .brand-wrap { margin: 0 auto; }
+    .metrics-grid { grid-template-columns: 1fr 1fr; }
+    #toast { left: 1rem; right: 1rem; width: auto; }
+  }
+</style>
+</head>
+<body>
+<div class="app-shell">
+
+  <!-- Topbar -->
+  <header class="topbar">
+    <div class="topbar-inner">
+      <div class="brand-wrap">
+        <div class="brand-mark"><i data-lucide="tree-pine" style="width:20px;height:20px"></i></div>
+        <div>
+          <p class="brand-kicker">CHRISTMAS PARTY</p>
+          <p class="brand-name serif">聖誕趴迎賓台</p>
+        </div>
+      </div>
+      <div class="demo-badge" id="demoLabel">示範模式｜請設定 Google Sheet 後正式使用</div>
+    </div>
+  </header>
+
+  <main>
+    <!-- 報到 -->
+    <section class="page-wrap hero-grid" aria-labelledby="checkin-heading">
+      <div class="hero-copy-wrap">
+        <div class="eyebrow">MERRY CHRISTMAS · 聖誕快樂</div>
+        <h1 class="hero-title serif">聖誕夜，<br>從這裡入座。</h1>
+        <p class="hero-copy">輸入你的姓名查詢座位，確認資料後完成報到，再依桌號入座。今晚好好吃、好好玩。</p>
+        <div class="hero-hint"><i data-lucide="armchair"></i><span>下方有會場座位圖，可縮放並點選桌子查看同桌夥伴</span></div>
+      </div>
+
+      <section class="panel" aria-labelledby="checkin-heading">
+        <div class="panel-body">
+          <div class="panel-head">
+            <div>
+              <h2 id="checkin-heading" class="panel-title serif">賓客自助報到</h2>
+              <p class="panel-sub">查詢名單後，請核對資訊再完成報到。</p>
+            </div>
+            <div class="icon-chip"><i data-lucide="user-check" style="width:20px;height:20px"></i></div>
+          </div>
+
+          <label class="field-label" for="searchInput">姓名或編號</label>
+          <div class="input-wrap">
+            <i data-lucide="search"></i>
+            <input id="searchInput" class="field-control" type="text" placeholder="輸入姓名或編號…" autocomplete="off">
+            <button id="clearBtn" type="button" aria-label="清除搜尋" onclick="clearSearch()">×</button>
+          </div>
+          <p class="help-text">可輸入姓名（部分文字即可）或編號，從清單中點選自己的名字。</p>
+
+          <div id="dropdown">
+            <div id="noResult" style="display:none">找不到此賓客</div>
+          </div>
+
+          <div id="guestPanel">
+            <div class="guest-card">
+              <div class="gc-top">
+                <span class="guest-name" id="gName"></span>
+                <span class="badge" id="gBadge"></span>
+              </div>
+              <div class="gc-meta">
+                <span class="id-badge" id="gId"></span>
+                <span class="table-badge">第 <span id="gTable">&nbsp;</span> 桌</span>
+                <span id="gRelation"></span>
+              </div>
+            </div>
+            <div class="tm-label" id="tmLabel"></div>
+            <div id="tmList" style="margin-bottom:.75rem"></div>
+            <div id="checkinStatus" class="checkin-status" role="status" aria-live="polite">
+              <span class="spinner"></span><span id="checkinStatusText">正在報到，請稍候…</span>
+            </div>
+            <button class="primary-button" id="mainCheckinBtn" type="button" onclick="checkinSelected()">確認報到</button>
+          </div>
+        </div>
+      </section>
+    </section>
+
+    <!-- 座位圖 -->
+    <section class="page-wrap" style="padding-top:0" aria-labelledby="map-heading">
+      <div class="section-head">
+        <div>
+          <div class="eyebrow">SEATING · 會場座位</div>
+          <h2 id="map-heading" class="section-title serif">會場座位圖</h2>
+        </div>
+      </div>
+      <div class="panel map-panel">
+        <div class="map-outer" id="mapOuter">
+          <div class="map-inner" id="mapInner">
+            <svg id="venueMap" viewBox="-4 5 118 70" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="會場座位圖"></svg>
+          </div>
+          <div class="map-controls">
+            <button class="map-btn" type="button" onclick="zoomMap(1.25)" title="放大" aria-label="放大">＋</button>
+            <button class="map-btn" type="button" onclick="zoomMap(0.8)" title="縮小" aria-label="縮小">－</button>
+            <button class="map-btn" type="button" onclick="resetMap()" title="重設" aria-label="重設"><i data-lucide="locate-fixed" style="width:18px;height:18px"></i></button>
+          </div>
+        </div>
+        <div id="tableDetail">
+          <div class="td-title" id="tdTitle"></div>
+          <div class="td-chips" id="tdChips"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 統計 -->
+    <section class="page-wrap" style="padding-top:0" aria-labelledby="stats-heading">
+      <div class="section-head">
+        <div>
+          <div class="eyebrow">LIVE · 即時統計</div>
+          <h2 id="stats-heading" class="section-title serif">報到進度</h2>
+        </div>
+      </div>
+      <div class="metrics-grid">
+        <article class="metric-card">
+          <div class="metric-top">
+            <div>
+              <p class="metric-label">整體報到率</p>
+              <p class="metric-sub" id="rateProgressLabel">0 / 0</p>
+            </div>
+            <p class="serif metric-num" id="ratePct">0%</p>
+          </div>
+          <div class="progress-track" aria-hidden="true"><div class="progress-fill" id="progressFill"></div></div>
+        </article>
+        <article class="metric-card">
+          <div class="metric-row">
+            <div class="metric-dot" style="background:#dceade;color:#276044"><i data-lucide="user-check" style="width:20px;height:20px"></i></div>
+            <div><p class="metric-sub" style="margin:0">已報到</p><p class="serif metric-num" id="rateChecked">0</p></div>
+          </div>
+        </article>
+        <article class="metric-card">
+          <div class="metric-row">
+            <div class="metric-dot" style="background:#f1eee7;color:#6a6963"><i data-lucide="user-round-x" style="width:20px;height:20px"></i></div>
+            <div><p class="metric-sub" style="margin:0">尚未報到</p><p class="serif metric-num" id="ratePending">0</p></div>
+          </div>
+        </article>
+        <article class="metric-card">
+          <div class="metric-row">
+            <div class="metric-dot" style="background:#fff4d9;color:#79571e"><i data-lucide="users" style="width:20px;height:20px"></i></div>
+            <div><p class="metric-sub" style="margin:0">賓客總數</p><p class="serif metric-num" id="rateTotal">0</p></div>
+          </div>
+        </article>
+      </div>
+    </section>
+  </main>
+
+  <footer>Merry Christmas · 祝大家今晚玩得開心 🎄</footer>
+</div>
+
+<div class="map-tooltip" id="tooltip"></div>
+<div id="toast" role="status" aria-live="polite"></div>
+
+<script>
+// ================================================================
+// 設定：換成你的 Google Apps Script 網址
+// ================================================================
+const GAS_URL = "https://script.google.com/macros/s/AKfycbw0kYdUfxqPb4YtmvjOrt1pMJqd43er8TDdXjdRhracaJbLdeD_eMd3EOJ7uWEwU7A/exec";
+// ================================================================
+
+// 示範資料（連不上 Google Sheet 時使用）
+const DEMO_GUESTS = [
+  {name:"王小明", id:"001", table:2, relation:"同事", checked:false},
+  {name:"李小華", id:"002", table:2, relation:"同事", checked:false},
+  {name:"陳美玲", id:"003", table:3, relation:"朋友", checked:false},
+  {name:"張志豪", id:"004", table:3, relation:"朋友", checked:false},
+];
+
+// 桌子座標（viewBox -4 5 118 70）；共 36 桌，由最右排起、由上而下、由右至左編號 1–36
+const TABLE_POS = {
+  1:{x:107,y:20}, 2:{x:107,y:34}, 3:{x:107,y:48},
+  4:{x:98,y:27}, 5:{x:98,y:41}, 6:{x:98,y:55},
+  7:{x:89,y:20}, 8:{x:89,y:34}, 9:{x:89,y:48},
+  10:{x:80,y:27}, 11:{x:80,y:41}, 12:{x:80,y:55},
+  13:{x:71,y:20}, 14:{x:71,y:34}, 15:{x:71,y:48},
+  16:{x:62,y:27}, 17:{x:62,y:41}, 18:{x:62,y:55},
+  19:{x:49,y:27}, 20:{x:49,y:41}, 21:{x:49,y:55},
+  22:{x:40,y:20}, 23:{x:40,y:34}, 24:{x:40,y:48},
+  25:{x:31,y:27}, 26:{x:31,y:41}, 27:{x:31,y:55},
+  28:{x:22,y:20}, 29:{x:22,y:34}, 30:{x:22,y:48},
+  31:{x:13,y:27}, 32:{x:13,y:41}, 33:{x:13,y:55},
+  34:{x:4,y:20}, 35:{x:4,y:34}, 36:{x:4,y:48},
+};
+
+// 地圖配色（對應 CSS 色票）
+const C = {
+  ink:"#18362f", sage:"#759682", gold:"#c79a45", goldDeep:"#8a672b",
+  green:"#276044", berry:"#9b3c35", paper:"#fffdf8", floor:"#fbf7ec"
+};
+
+let guests = [], selectedGuest = null, highlightedTable = null, useDemo = true;
+
+// ── Init ──────────────────────────────────────────────────────
+(async function init() {
+  let reason = "";
+  try {
+    const res = await fetch(GAS_URL + "?action=getGuests");
+    const text = await res.text();
+    let data;
+    try { data = JSON.parse(text); }
+    catch(e) { throw new Error("後端沒有回傳 JSON（可能是權限未設為「所有人」或網址不是 /exec）"); }
+    if (data.guests) { guests = data.guests; useDemo = false; }
+    else throw new Error(data.error || "後端回傳格式不正確");
+  } catch(e) {
+    reason = e.message || String(e);
+    guests = DEMO_GUESTS.map(g => ({...g}));
+    document.getElementById("demoLabel").textContent = "示範模式｜" + reason;
+    showToast("無法連動試算表：" + reason, "error");
+    console.error("GAS error:", e);
+  }
+  if (!useDemo) document.getElementById("demoLabel").style.display = "none";
+  updateStats();
+  buildMap();
+  if (window.lucide) lucide.createIcons();
+})();
+
+// ── Map Build ─────────────────────────────────────────────────
+function buildMap() {
+  const svg = document.getElementById("venueMap");
+  svg.innerHTML = "";
+  const ns = "http://www.w3.org/2000/svg";
+  const el = (tag, attrs) => {
+    const e = document.createElementNS(ns, tag);
+    Object.entries(attrs).forEach(([k,v]) => e.setAttribute(k,v));
+    return e;
+  };
+  const txt = (x, y, text, attrs) => {
+    const t = el("text", {x, y, "text-anchor":"middle", "font-family":"'DM Sans','Noto Serif TC',sans-serif", ...attrs});
+    t.textContent = text; return t;
+  };
+
+  // 外牆
+  svg.appendChild(el("rect",{x:-3,y:6,width:116,height:65,fill:C.floor,stroke:C.gold,"stroke-width":.5,rx:2}));
+  // 舞台
+  svg.appendChild(el("rect",{x:43,y:6,width:24,height:7,fill:C.ink,rx:1}));
+  svg.appendChild(txt(55,10.5,"舞　台",{fill:"#f4d99b","font-size":2.8,"font-weight":"700"}));
+
+  // 入口
+  svg.appendChild(el("rect",{x:45,y:67.5,width:20,height:3.5,fill:"none",stroke:C.gold,"stroke-width":.5,"stroke-dasharray":"1.2,.6"}));
+  svg.appendChild(txt(55,70,"入 口",{fill:C.goldDeep,"font-size":2.2,"font-weight":"600"}));
+
+  // 圖例
+  [[70,67.5,"rgba(39,96,68,.18)","rgba(39,96,68,.7)","全桌已到"],
+   [85,67.5,"rgba(199,154,69,.25)","rgba(199,154,69,.85)","部分已到"],
+   [101,67.5,"rgba(255,253,248,.95)","rgba(117,150,130,.8)","尚未到"]]
+  .forEach(([cx,cy,fill,stroke,label]) => {
+    svg.appendChild(el("circle",{cx,cy,r:1.5,fill,stroke,"stroke-width":.5}));
+    svg.appendChild(txt(cx+2.5,cy+.6,label,{fill:"#566d66","font-size":1.9,"text-anchor":"start"}));
+  });
+
+  // 圓桌
+  Object.entries(TABLE_POS).forEach(([num, pos]) => {
+    const n = parseInt(num);
+    const g = document.createElementNS(ns,"g");
+    g.setAttribute("class","t-group"); g.setAttribute("data-table",n); g.style.cursor="pointer";
+    const circle = el("circle",{cx:pos.x,cy:pos.y,r:4,fill:"rgba(255,253,248,.95)",stroke:"rgba(117,150,130,.8)","stroke-width":.5});
+    const ring   = el("circle",{cx:pos.x,cy:pos.y,r:5.3,fill:"none",stroke:C.gold,"stroke-width":.6,"stroke-dasharray":"1,.8",opacity:0});
+    const label  = document.createElementNS(ns,"text");
+    label.setAttribute("x",pos.x); label.setAttribute("y",pos.y+.9);
+    label.setAttribute("text-anchor","middle"); label.setAttribute("font-family","'DM Sans',sans-serif");
+    label.setAttribute("font-weight","700");
+    label.setAttribute("font-size","2.6"); label.setAttribute("fill",C.ink);
+    label.textContent = n;
+    g.appendChild(circle); g.appendChild(ring); g.appendChild(label);
+    g.addEventListener("click", () => onTableClick(n));
+    g.addEventListener("mouseenter", e => showTooltip(n, e));
+    g.addEventListener("mouseleave", hideTooltip);
+    svg.appendChild(g);
+  });
+
+  updateMap();
+}
+
+function updateMap() {
+  document.querySelectorAll(".t-group").forEach(g => {
+    const n = parseInt(g.dataset.table);
+    const circle = g.querySelectorAll("circle")[0];
+    const ring   = g.querySelectorAll("circle")[1];
+    const label  = g.querySelector("text");
+    const tg = guests.filter(x => x.table === n);
+    const allDone  = tg.length > 0 && tg.every(x => x.checked);
+    const someDone = tg.some(x => x.checked);
+    const isHL = highlightedTable === n;
+    if (isHL) {
+      circle.setAttribute("fill","rgba(199,154,69,.3)"); circle.setAttribute("stroke",C.gold); circle.setAttribute("stroke-width","0.9");
+      ring.setAttribute("opacity","1"); label.setAttribute("fill",C.ink);
+    } else if (allDone) {
+      circle.setAttribute("fill","rgba(39,96,68,.18)"); circle.setAttribute("stroke","rgba(39,96,68,.7)"); circle.setAttribute("stroke-width","0.5");
+      ring.setAttribute("opacity","0"); label.setAttribute("fill",C.green);
+    } else if (someDone) {
+      circle.setAttribute("fill","rgba(199,154,69,.25)"); circle.setAttribute("stroke","rgba(199,154,69,.85)"); circle.setAttribute("stroke-width","0.5");
+      ring.setAttribute("opacity","0"); label.setAttribute("fill","#79571e");
+    } else {
+      circle.setAttribute("fill","rgba(255,253,248,.95)"); circle.setAttribute("stroke","rgba(117,150,130,.8)"); circle.setAttribute("stroke-width","0.5");
+      ring.setAttribute("opacity","0"); label.setAttribute("fill",C.ink);
+    }
+  });
+}
+
+// ── Map Zoom / Pan ────────────────────────────────────────────
+let mapScale = 1, mapX = 0, mapY = 0;
+let isPanning = false, startX, startY, startMapX, startMapY;
+let lastDist = null;
+
+function applyTransform() {
+  document.getElementById("mapInner").style.transform = `translate(${mapX}px,${mapY}px) scale(${mapScale})`;
+}
+function zoomMap(factor) {
+  mapScale = Math.min(4, Math.max(1, mapScale * factor));
+  applyTransform();
+}
+function resetMap() { mapScale=1; mapX=0; mapY=0; applyTransform(); }
+
+const outer = document.getElementById("mapOuter");
+
+outer.addEventListener("mousedown", e => {
+  if (e.button !== 0) return;
+  isPanning=true; startX=e.clientX; startY=e.clientY; startMapX=mapX; startMapY=mapY;
+});
+document.addEventListener("mousemove", e => {
+  if (!isPanning) return;
+  mapX = startMapX + e.clientX - startX;
+  mapY = startMapY + e.clientY - startY;
+  applyTransform();
+});
+document.addEventListener("mouseup", () => { isPanning=false; });
+
+outer.addEventListener("touchstart", e => {
+  if (e.touches.length === 2) {
+    lastDist = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
+  } else if (e.touches.length === 1) {
+    isPanning=true; startX=e.touches[0].clientX; startY=e.touches[0].clientY; startMapX=mapX; startMapY=mapY;
+  }
+}, {passive:true});
+outer.addEventListener("touchmove", e => {
+  if (e.touches.length === 2) {
+    const dist = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
+    if (lastDist) { mapScale = Math.min(4, Math.max(1, mapScale * dist / lastDist)); applyTransform(); }
+    lastDist = dist;
+  } else if (e.touches.length === 1 && isPanning) {
+    mapX = startMapX + e.touches[0].clientX - startX;
+    mapY = startMapY + e.touches[0].clientY - startY;
+    applyTransform();
+  }
+}, {passive:true});
+outer.addEventListener("touchend", () => { isPanning=false; lastDist=null; });
+
+outer.addEventListener("wheel", e => {
+  e.preventDefault();
+  zoomMap(e.deltaY < 0 ? 1.15 : 0.87);
+}, {passive:false});
+
+// ── Table click ───────────────────────────────────────────────
+function onTableClick(n) {
+  highlightedTable = highlightedTable === n ? null : n;
+  updateMap();
+  renderTableDetail(n);
+  if (selectedGuest && selectedGuest.table !== n) {
+    selectedGuest = null;
+    document.getElementById("guestPanel").style.display = "none";
+  }
+}
+
+function renderTableDetail(n) {
+  const el = document.getElementById("tableDetail");
+  if (highlightedTable !== n) { el.style.display="none"; return; }
+  const tg = guests.filter(g => g.table === n);
+  document.getElementById("tdTitle").textContent = `第 ${n} 桌賓客（${tg.length} 人）`;
+  const chips = document.getElementById("tdChips");
+  chips.innerHTML = "";
+  if (!tg.length) { chips.innerHTML = `<span style="font-size:14px;color:#6c7f79">此桌尚無資料</span>`; }
+  else tg.forEach(g => {
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "td-chip" + (g.checked?" ck":"");
+    btn.textContent = (g.checked?"✓ ":"") + g.name;
+    btn.onclick = () => selectGuest(g);
+    chips.appendChild(btn);
+  });
+  el.style.display = "block";
+}
+
+// ── Tooltip ───────────────────────────────────────────────────
+function showTooltip(n, e) {
+  const tg = guests.filter(g => g.table === n);
+  if (!tg.length) return;
+  const tt = document.getElementById("tooltip");
+  tt.innerHTML = `<div class="tt-title">第 ${n} 桌</div>` +
+    tg.map(g => `<div class="tt-guest${g.checked?" ck":""}">${g.checked?"✓ ":""}${g.name}</div>`).join("");
+  tt.style.display = "block";
+  tt.style.left = (e.clientX + 12) + "px";
+  tt.style.top  = (e.clientY + 12) + "px";
+}
+function hideTooltip() { document.getElementById("tooltip").style.display="none"; }
+
+// ── Search ────────────────────────────────────────────────────
+document.getElementById("searchInput").addEventListener("input", function() {
+  const q = this.value.trim();
+  document.getElementById("clearBtn").style.display = q ? "block" : "none";
+  if (!q) { closeDropdown(); return; }
+  const ql = q.toLowerCase();
+  renderDropdown(guests.filter(g =>
+    g.name.toLowerCase().includes(ql) || (g.id && String(g.id).toLowerCase().includes(ql))
+  ));
+});
+
+function renderDropdown(results) {
+  const dd = document.getElementById("dropdown");
+  dd.querySelectorAll(".drop-item").forEach(e => e.remove());
+  document.getElementById("noResult").style.display = results.length ? "none" : "block";
+  results.forEach(g => {
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "drop-item";
+    const left = document.createElement("span");
+    left.textContent = g.name;
+    if (g.id) { const i = document.createElement("span"); i.className = "d-id"; i.textContent = "#" + g.id; left.appendChild(i); }
+    const right = document.createElement("span");
+    right.className = "d-tbl"; right.textContent = "桌 " + g.table;
+    btn.appendChild(left); btn.appendChild(right);
+    btn.onclick = () => selectGuest(g);
+    dd.appendChild(btn);
+  });
+  dd.style.display = "block";
+}
+function closeDropdown() { document.getElementById("dropdown").style.display="none"; }
+
+function clearSearch() {
+  document.getElementById("searchInput").value = "";
+  document.getElementById("clearBtn").style.display = "none";
+  closeDropdown();
+  selectedGuest = null; highlightedTable = null;
+  document.getElementById("guestPanel").style.display = "none";
+  document.getElementById("tableDetail").style.display = "none";
+  updateMap();
+}
+
+function selectGuest(g) {
+  selectedGuest = g; highlightedTable = g.table;
+  document.getElementById("searchInput").value = g.name;
+  document.getElementById("clearBtn").style.display = "block";
+  closeDropdown();
+  renderGuestPanel(); renderTableDetail(g.table); updateMap();
+}
+
+function renderGuestPanel() {
+  const g = selectedGuest;
+  document.getElementById("gName").textContent = g.name;
+  document.getElementById("gTable").textContent = g.table;
+  document.getElementById("gId").textContent = g.id ? "編號 " + g.id : "";
+  document.getElementById("gRelation").textContent = g.relation || "";
+  const badge = document.getElementById("gBadge");
+  badge.textContent = g.checked ? "✓ 已報到" : "待報到";
+  badge.className = "badge " + (g.checked ? "badge-done" : "badge-pending");
+  const tms = guests.filter(x => x.table === g.table);
+  document.getElementById("tmLabel").textContent = `同桌賓客（${tms.length} 人）`;
+  const list = document.getElementById("tmList");
+  list.innerHTML = "";
+  tms.forEach(tm => {
+    const row = document.createElement("div");
+    row.className = "tm-row " + (tm.name === g.name ? "me" : "other");
+    const left = document.createElement("div");
+    left.innerHTML = `<span class="tm-name"></span><span class="tm-rel"></span>`;
+    left.querySelector(".tm-name").textContent = tm.name;
+    left.querySelector(".tm-rel").textContent = [tm.id ? "#" + tm.id : "", tm.relation || ""].filter(Boolean).join(" ");
+    row.appendChild(left);
+    if (tm.checked) {
+      const done = document.createElement("span");
+      done.className = "done-mark"; done.textContent = "✓ 已到";
+      row.appendChild(done);
+    } else {
+      const b = document.createElement("button");
+      b.type = "button"; b.className = "compact-button"; b.textContent = "報到";
+      b.addEventListener("click", () => doCheckin(tm, b));
+      row.appendChild(b);
+    }
+    list.appendChild(row);
+  });
+  const btn = document.getElementById("mainCheckinBtn");
+  btn.style.display = g.checked ? "none" : "inline-flex";
+  btn.textContent = "確認報到"; btn.disabled = false; btn.classList.remove("is-loading");
+  document.getElementById("guestPanel").style.display = "block";
+}
+
+// ── Check-in ──────────────────────────────────────────────────
+let checking = false;
+
+async function checkinSelected() {
+  if (selectedGuest && !selectedGuest.checked) await doCheckin(selectedGuest, document.getElementById("mainCheckinBtn"));
+}
+
+function setCheckinBusy(on, g, btn) {
+  const panel = document.getElementById("guestPanel");
+  const status = document.getElementById("checkinStatus");
+  panel.classList.toggle("is-busy", on);
+  status.classList.toggle("show", on);
+  if (on) {
+    document.getElementById("checkinStatusText").textContent = `正在為 ${g.name} 報到，請稍候…`;
+    if (btn) {
+      btn.classList.add("is-loading");
+      btn.innerHTML = '<span class="spinner"></span>報到中…';
+    }
+  }
+}
+
+async function doCheckin(g, btn) {
+  if (checking) return;
+  if (!g || g.checked) { showToast(`${g ? g.name : ""} 已完成報到`,"warning"); return; }
+  checking = true;
+  setCheckinBusy(true, g, btn);
+  try {
+    if (!useDemo) {
+      let url = `${GAS_URL}?action=checkin&name=${encodeURIComponent(g.name)}`;
+      if (g.id) url += `&id=${encodeURIComponent(g.id)}`;
+      const res = await fetch(url);
+      const data = await res.json();
+      if (!data.ok) throw new Error(data.error || "報到失敗");
+    }
+    g.checked = true;
+    showToast(`🎄 ${g.name} 報到成功！請入座第 ${g.table} 桌`,"success");
+  } catch(e) { showToast("報到失敗：" + (e.message || "請重試"),"error"); }
+  checking = false;
+  setCheckinBusy(false);
+  updateStats(); updateMap();
+  if (selectedGuest) renderGuestPanel();
+  if (highlightedTable) renderTableDetail(highlightedTable);
+}
+
+// ── Stats ─────────────────────────────────────────────────────
+function updateStats() {
+  const checked = guests.filter(g => g.checked).length;
+  const total   = guests.length;
+  const pct     = total ? Math.round(checked / total * 100) : 0;
+  document.getElementById("rateChecked").textContent = checked;
+  document.getElementById("rateTotal").textContent   = total;
+  document.getElementById("ratePct").textContent     = pct + "%";
+  document.getElementById("ratePending").textContent = total - checked;
+  document.getElementById("rateProgressLabel").textContent = `${checked} / ${total}`;
+  document.getElementById("progressFill").style.width = pct + "%";
+}
+
+// ── Toast ─────────────────────────────────────────────────────
+let toastTimer;
+function showToast(msg, type="success") {
+  const t = document.getElementById("toast");
+  t.textContent = msg; t.className = type; t.style.display="block";
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.style.display="none", type==="error" ? 9000 : 3000);
+}
+
+document.addEventListener("click", e => {
+  if (!e.target.closest("#searchInput") && !e.target.closest("#dropdown")) closeDropdown();
+});
+</script>
+</body>
+</html>
