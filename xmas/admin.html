@@ -1,0 +1,642 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex">
+<title>聖誕趴後台管理</title>
+<script src="https://cdn.jsdelivr.net/npm/lucide@0.263.0/dist/umd/lucide.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Noto+Serif+TC:wght@600;700;900&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #18362f; --cream: #f7f1e5; --paper: #fffdf8; --gold: #c79a45;
+    --sage: #759682; --berry: #9b3c35; --muted: #6c7f79; --line: rgba(24,54,47,.14);
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; min-height: 100vh;
+    font-family: "DM Sans", "Noto Sans TC", sans-serif; color: var(--ink);
+    background: radial-gradient(circle at left top, #fffdf8, #f1eadb);
+  }
+  button, input, select, textarea { font: inherit; }
+  button { cursor: pointer; -webkit-tap-highlight-color: transparent; }
+  .serif { font-family: "Noto Serif TC", serif; }
+  .hidden { display: none !important; }
+  .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0,0,0,0); }
+
+  .app-shell { position: relative; overflow-x: hidden; min-height: 100vh; }
+  .app-shell::before {
+    content: ""; position: fixed; inset: 0; pointer-events: none; opacity: .32;
+    background-image: linear-gradient(rgba(24,54,47,.035) 1px, transparent 1px), linear-gradient(90deg, rgba(24,54,47,.035) 1px, transparent 1px);
+    background-size: 36px 36px; mask-image: linear-gradient(to bottom, black, transparent 74%);
+  }
+
+  .topbar { position: sticky; top: 0; z-index: 30; border-bottom: 1px solid var(--line); backdrop-filter: blur(16px); background: rgba(255,253,248,.9); }
+  .topbar-inner { max-width: 1180px; margin: 0 auto; padding: .75rem 1rem; display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
+  .brand-wrap { display: flex; align-items: center; gap: .75rem; }
+  .brand-mark { width: 42px; height: 42px; display: grid; place-items: center; border-radius: 50% 50% 42% 58%; background: var(--ink); color: #f4d99b; box-shadow: 0 10px 24px rgba(24,54,47,.15); transform: rotate(-4deg); }
+  .brand-kicker { margin: 0; font-size: 11px; font-weight: 700; letter-spacing: .18em; color: #9a7738; }
+  .brand-name { margin: 0; font-size: 18px; font-weight: 700; }
+  .top-actions { display: flex; align-items: center; gap: .5rem; }
+
+  .page-wrap { width: 100%; max-width: 1180px; margin: 0 auto; padding: clamp(1rem, 3vw, 2.5rem); position: relative; z-index: 1; }
+
+  .eyebrow { display: inline-flex; align-items: center; gap: .55rem; padding: .45rem .75rem; border: 1px solid rgba(199,154,69,.42); border-radius: 999px; background: rgba(255,253,248,.72); color: #8a672b; font-size: .82rem; font-weight: 700; letter-spacing: .12em; }
+
+  .panel { position: relative; overflow: hidden; background: var(--paper); border: 1px solid var(--line); border-radius: 28px; box-shadow: 0 28px 70px rgba(38,62,53,.11); }
+  .panel::after { content: ""; position: absolute; top: -70px; right: -70px; width: 180px; height: 180px; border: 1px solid rgba(199,154,69,.22); border-radius: 50%; pointer-events: none; }
+  .panel-body { padding: clamp(1.25rem, 3vw, 2rem); position: relative; z-index: 1; }
+  .panel-title { margin: 0; font-size: 24px; font-weight: 700; }
+  .panel-sub { margin: .5rem 0 0; font-size: 14px; line-height: 1.6; color: var(--muted); }
+
+  .field-label { display: block; margin-bottom: .55rem; font-weight: 700; }
+  .input-wrap { position: relative; }
+  .input-wrap > svg { position: absolute; left: 1rem; top: 50%; transform: translateY(-50%); width: 20px; height: 20px; color: #7b8d87; pointer-events: none; }
+  .field-control { width: 100%; padding: .95rem 1rem .95rem 3rem; border: 1px solid rgba(24,54,47,.2); border-radius: 15px; background: rgba(255,255,255,.72); color: var(--ink); outline: none; transition: .2s ease; }
+  .field-control.plain { padding-left: 1rem; }
+  .field-control:focus { border-color: var(--gold); box-shadow: 0 0 0 4px rgba(199,154,69,.15); background: #fff; }
+  textarea.field-control { min-height: 160px; resize: vertical; padding: 1rem; line-height: 1.7; }
+  .help-text { margin: .55rem 0 0; font-size: 13px; line-height: 1.6; color: #71837d; }
+
+  button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible { outline: 3px solid rgba(199,154,69,.5); outline-offset: 3px; }
+
+  .primary-button, .secondary-button, .compact-button {
+    display: inline-flex; align-items: center; justify-content: center; gap: .5rem;
+    font-weight: 700; transition: .2s ease; border: 1px solid transparent;
+  }
+  .primary-button { min-height: 46px; padding: .7rem 1.1rem; border-radius: 14px; background: var(--ink); color: #fff; box-shadow: 0 8px 22px rgba(24,54,47,.22); }
+  .primary-button:hover:not(:disabled) { transform: translateY(-1px); }
+  .primary-button:disabled { opacity: .62; cursor: wait; }
+  .secondary-button { min-height: 46px; padding: .7rem 1.1rem; border-radius: 14px; border-color: rgba(24,54,47,.18); background: rgba(255,255,255,.7); color: var(--ink); }
+  .secondary-button:hover { border-color: var(--gold); }
+  .secondary-button.small { min-height: 38px; padding: .45rem .8rem; border-radius: 12px; font-size: .88rem; }
+  .compact-button { min-height: 38px; padding: .5rem .7rem; border-radius: 10px; font-size: .84rem; border-color: var(--line); background: #fff; color: var(--ink); }
+  .compact-button:hover { border-color: var(--gold); }
+  .compact-button.delete { color: var(--berry); }
+  .compact-button.confirm { color: #fff; background: var(--berry); border-color: var(--berry); }
+
+  /* PIN gate */
+  .gate { min-height: calc(100vh - 70px); display: grid; place-items: center; padding: 1.5rem; }
+  .gate .panel { width: min(440px, 100%); }
+  .gate-icon { width: 52px; height: 52px; border-radius: 50%; display: grid; place-items: center; background: #eef3ed; color: #426757; margin-bottom: 1rem; }
+  .gate-error { margin: .75rem 0 0; font-size: 14px; font-weight: 600; color: var(--berry); min-height: 1.3em; }
+
+  /* Header */
+  .admin-header { padding: clamp(1.5rem, 4vw, 3rem) 0 1.5rem; display: flex; align-items: flex-end; justify-content: space-between; gap: 1rem; flex-wrap: wrap; }
+  .admin-title { margin: 1rem 0 0; font-size: clamp(1.9rem, 4.5vw, 2.6rem); font-weight: 900; letter-spacing: -.02em; }
+  .admin-desc { margin: .5rem 0 0; color: #566d66; line-height: 1.7; max-width: 620px; }
+  .header-actions { display: flex; gap: .6rem; flex-wrap: wrap; }
+
+  /* Metrics */
+  .metrics-grid { display: grid; grid-template-columns: 1.5fr 1fr 1fr 1fr; gap: 1rem; }
+  .metric-card { border: 1px solid var(--line); border-radius: 22px; padding: 1.25rem; background: rgba(255,253,248,.86); box-shadow: 0 14px 38px rgba(38,62,53,.07); }
+  .metric-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; }
+  .metric-label { margin: 0; font-weight: 700; }
+  .metric-sub { margin: .25rem 0 0; font-size: .88rem; color: var(--muted); }
+  .metric-num { margin: .25rem 0 0; font-size: 1.9rem; font-weight: 900; line-height: 1.1; }
+  .metric-row { display: flex; align-items: center; gap: .75rem; }
+  .metric-dot { width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; flex: 0 0 auto; }
+  .progress-track { height: 10px; margin-top: 1rem; border-radius: 999px; background: #e8e4da; overflow: hidden; }
+  .progress-fill { height: 100%; width: 0; border-radius: inherit; background: linear-gradient(to right, #759682, #c79a45); transition: width .45s ease; }
+
+  /* Import */
+  .import-panel { margin-top: 1rem; }
+  .import-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem; }
+  .import-actions { margin-top: 1rem; display: flex; flex-wrap: wrap; gap: .75rem; align-items: center; }
+  .import-result { font-size: .9rem; line-height: 1.7; color: #566d66; }
+  .import-result .err { color: var(--berry); font-weight: 600; }
+  code.fmt { background: #f1eee7; border-radius: 8px; padding: .1rem .45rem; font-size: .85em; }
+
+  /* Toolbar & list */
+  .toolbar { display: grid; grid-template-columns: minmax(240px, 1fr) 170px 150px auto; gap: .75rem; margin: 1.5rem 0 1rem; align-items: center; }
+  .record-count { font-size: .9rem; font-weight: 700; color: var(--muted); text-align: right; white-space: nowrap; padding: 0 .5rem; }
+  .list-title { margin: 0 0 .75rem; font-size: 1.35rem; font-weight: 700; }
+  .guest-list { display: grid; gap: .75rem; padding-bottom: 2rem; }
+  .guest-row {
+    display: grid; grid-template-columns: minmax(170px, 1.15fr) minmax(110px, .8fr) 100px minmax(150px, .9fr) auto;
+    gap: 1rem; align-items: center; background: var(--paper);
+    border: 1px solid var(--line); border-radius: 18px; padding: 1rem; transition: .2s ease;
+  }
+  .guest-row:hover { transform: translateY(-1px); box-shadow: 0 12px 30px rgba(38,62,53,.08); }
+  .guest-row.is-busy { opacity: .6; pointer-events: none; }
+  .g-name { margin: 0; font-weight: 800; font-size: 1.05rem; word-break: break-word; }
+  .g-id { margin: .2rem 0 0; font-size: .78rem; color: #82918c; }
+  .g-group { font-size: .9rem; color: #5d736c; }
+  .table-badge { display: inline-flex; align-items: center; justify-content: center; min-width: 58px; min-height: 36px; padding: .3rem .7rem; border-radius: 12px; background: #fff4d9; color: #79571e; font-weight: 800; }
+  .state-badge { display: inline-flex; align-items: center; gap: .35rem; border-radius: 999px; padding: .38rem .7rem; font-size: .82rem; font-weight: 800; }
+  .state-badge.checked { background: #dceade; color: #276044; }
+  .state-badge.pending { background: #f1eee7; color: #6a6963; }
+  .g-time { margin: .3rem 0 0; font-size: .78rem; color: #82918c; }
+  .row-actions { display: flex; justify-content: flex-end; align-items: center; gap: .45rem; flex-wrap: wrap; }
+  .delete-confirm { display: flex; align-items: center; gap: .4rem; flex-wrap: wrap; }
+  .delete-confirm span { font-size: .8rem; font-weight: 700; color: var(--berry); }
+
+  .empty-state { text-align: center; border: 1px dashed rgba(24,54,47,.25); border-radius: 22px; padding: 3rem 1rem; background: rgba(255,253,248,.64); color: var(--muted); }
+  .empty-state .t { font-weight: 700; color: var(--ink); margin: .5rem 0 0; }
+  .empty-state.error .t { color: #8c3833; }
+
+  .spinner { width: 17px; height: 17px; border: 2px solid currentColor; border-right-color: transparent; border-radius: 50%; animation: spin .7s linear infinite; display: inline-block; vertical-align: -3px; margin-right: .5rem; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .toast-region { position: fixed; right: 1rem; bottom: 1rem; z-index: 80; width: min(390px, calc(100% - 2rem)); display: grid; gap: .5rem; pointer-events: none; }
+  .toast { border-radius: 15px; padding: .9rem 1rem; font-weight: 600; background: var(--ink); color: #fff; box-shadow: 0 18px 45px rgba(24,54,47,.22); animation: pop .25s ease both; }
+  .toast.error { background: #8c3833; }
+  @keyframes pop { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+  @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+
+  @media (max-width: 900px) {
+    .metrics-grid { grid-template-columns: 1fr 1fr; }
+    .metrics-grid .metric-card:first-child { grid-column: 1 / -1; }
+    .toolbar { grid-template-columns: 1fr 1fr; }
+    .toolbar .input-wrap { grid-column: 1 / -1; }
+    .record-count { text-align: left; }
+    .guest-row { grid-template-columns: 1fr auto; }
+    .row-actions { grid-column: 1 / -1; justify-content: flex-start; border-top: 1px solid var(--line); padding-top: .75rem; }
+  }
+  @media (max-width: 560px) {
+    .page-wrap { padding: 1rem; }
+    .panel { border-radius: 22px; }
+    .top-actions .hide-sm { display: none; }
+    .toast-region { left: 1rem; right: 1rem; width: auto; }
+  }
+</style>
+</head>
+<body>
+<div class="app-shell">
+
+  <header class="topbar">
+    <div class="topbar-inner">
+      <div class="brand-wrap">
+        <div class="brand-mark"><i data-lucide="gift" style="width:20px;height:20px"></i></div>
+        <div>
+          <p class="brand-kicker">CHRISTMAS PARTY · ADMIN</p>
+          <p class="brand-name serif">聖誕趴後台</p>
+        </div>
+      </div>
+      <div class="top-actions">
+        <a class="secondary-button small hide-sm" href="index.html" style="text-decoration:none"><i data-lucide="arrow-left" style="width:16px;height:16px"></i>報到頁</a>
+        <button id="logoutBtn" class="secondary-button small hidden" type="button"><i data-lucide="log-out" style="width:16px;height:16px"></i>登出</button>
+      </div>
+    </div>
+  </header>
+
+  <!-- 密碼 -->
+  <section id="gate" class="gate">
+    <div class="panel">
+      <div class="panel-body">
+        <div class="gate-icon"><i data-lucide="lock" style="width:24px;height:24px"></i></div>
+        <h1 class="panel-title serif">後台登入</h1>
+        <p class="panel-sub">請輸入後台密碼以管理賓客名單與報到狀態。</p>
+        <form id="gateForm" style="margin-top:1.25rem">
+          <label class="field-label" for="pinInput">後台密碼</label>
+          <input id="pinInput" class="field-control plain" type="password" autocomplete="current-password" required>
+          <p id="gateError" class="gate-error" role="alert"></p>
+          <button id="gateBtn" class="primary-button" type="submit" style="width:100%;margin-top:.5rem">進入後台</button>
+        </form>
+      </div>
+    </div>
+  </section>
+
+  <!-- 後台 -->
+  <main id="adminView" class="hidden">
+    <div class="page-wrap">
+      <header class="admin-header">
+        <div>
+          <div class="eyebrow">ADMIN · 後台管理</div>
+          <h1 class="admin-title serif">賓客與報到管理</h1>
+          <p class="admin-desc">即時查看報到進度，手動協助報到、取消報到，或新增與匯入賓客名單。</p>
+        </div>
+        <div class="header-actions">
+          <button id="refreshBtn" class="secondary-button" type="button"><i data-lucide="refresh-cw" style="width:18px;height:18px"></i>重新整理</button>
+          <button id="exportBtn" class="secondary-button" type="button"><i data-lucide="download" style="width:18px;height:18px"></i>匯出 CSV</button>
+          <button id="toggleImport" class="primary-button" type="button" aria-expanded="false" aria-controls="importPanel"><i data-lucide="user-plus" style="width:18px;height:18px"></i>新增 / 匯入</button>
+        </div>
+      </header>
+
+      <section class="metrics-grid" aria-label="報到統計">
+        <article class="metric-card">
+          <div class="metric-top">
+            <div><p class="metric-label">整體報到進度</p><p class="metric-sub" id="progressSummary">0 / 0</p></div>
+            <p class="serif metric-num" id="progressPercent">0%</p>
+          </div>
+          <div class="progress-track" aria-hidden="true"><div class="progress-fill" id="progressFill"></div></div>
+        </article>
+        <article class="metric-card">
+          <div class="metric-row">
+            <div class="metric-dot" style="background:#dceade;color:#276044"><i data-lucide="user-check" style="width:20px;height:20px"></i></div>
+            <div><p class="metric-sub" style="margin:0">已報到</p><p class="serif metric-num" id="checkedCount">0</p></div>
+          </div>
+        </article>
+        <article class="metric-card">
+          <div class="metric-row">
+            <div class="metric-dot" style="background:#f1eee7;color:#6a6963"><i data-lucide="user-round-x" style="width:20px;height:20px"></i></div>
+            <div><p class="metric-sub" style="margin:0">尚未報到</p><p class="serif metric-num" id="pendingCount">0</p></div>
+          </div>
+        </article>
+        <article class="metric-card">
+          <div class="metric-row">
+            <div class="metric-dot" style="background:#fff4d9;color:#79571e"><i data-lucide="users" style="width:20px;height:20px"></i></div>
+            <div><p class="metric-sub" style="margin:0">賓客總數</p><p class="serif metric-num" id="totalCount">0</p></div>
+          </div>
+        </article>
+      </section>
+
+      <section id="importPanel" class="panel import-panel hidden" aria-labelledby="importHeading">
+        <div class="panel-body">
+          <div class="import-head">
+            <div>
+              <h2 id="importHeading" class="panel-title serif">新增 / 匯入賓客</h2>
+              <p class="panel-sub">每行一位賓客，格式為 <code class="fmt">姓名, 編號, 桌號, 組別</code>。可直接從試算表複製貼上（欄位順序相同）。</p>
+            </div>
+            <button id="closeImport" class="secondary-button small" type="button" aria-label="關閉"><i data-lucide="x" style="width:18px;height:18px"></i></button>
+          </div>
+          <form id="importForm" style="margin-top:1.25rem">
+            <label class="field-label" for="importData">賓客資料</label>
+            <textarea id="importData" class="field-control" placeholder="王小明, 001, 5, 同事&#10;李小華, 002, 5, 同事&#10;陳美玲, , 8, 朋友"></textarea>
+            <p class="help-text">姓名與桌號必填；編號、組別可留空（保留逗號即可）。編號重複的資料會自動略過。</p>
+            <div class="import-actions">
+              <button id="importSubmit" class="primary-button" type="submit"><i data-lucide="upload" style="width:18px;height:18px"></i>加入名單</button>
+              <div id="importResult" class="import-result" aria-live="polite"></div>
+            </div>
+          </form>
+        </div>
+      </section>
+
+      <section aria-labelledby="listHeading">
+        <div class="toolbar">
+          <div class="input-wrap">
+            <i data-lucide="search"></i>
+            <label for="adminSearch" class="sr-only">搜尋賓客</label>
+            <input id="adminSearch" class="field-control" type="search" placeholder="搜尋姓名、編號、桌號或組別…" autocomplete="off">
+          </div>
+          <div>
+            <label for="statusFilter" class="sr-only">篩選報到狀態</label>
+            <select id="statusFilter" class="field-control plain">
+              <option value="all">全部狀態</option>
+              <option value="pending">尚未報到</option>
+              <option value="checked">已報到</option>
+            </select>
+          </div>
+          <div>
+            <label for="tableFilter" class="sr-only">篩選桌號</label>
+            <select id="tableFilter" class="field-control plain"><option value="all">全部桌號</option></select>
+          </div>
+          <span id="recordCount" class="record-count">0 / 0</span>
+        </div>
+
+        <h2 id="listHeading" class="list-title serif">賓客名單</h2>
+        <div id="listLoading" class="empty-state"><span class="spinner"></span>正在載入名單…</div>
+        <div id="listError" class="empty-state error hidden" role="alert">
+          <i data-lucide="circle-alert" style="width:32px;height:32px;color:#9b3c35"></i>
+          <p class="t">名單載入失敗</p>
+          <p id="listErrorMsg" style="margin:.4rem 0 1rem"></p>
+          <button id="retryBtn" class="secondary-button small" type="button">再試一次</button>
+        </div>
+        <div id="listEmpty" class="empty-state hidden">
+          <i data-lucide="users-round" style="width:36px;height:36px;color:#759682"></i>
+          <p class="t serif">還沒有賓客資料</p>
+          <p style="margin:.4rem 0 0">按右上方「新增 / 匯入」加入第一批名單。</p>
+        </div>
+        <div id="filterEmpty" class="empty-state hidden">
+          <i data-lucide="list-filter" style="width:36px;height:36px;color:#759682"></i>
+          <p class="t serif">沒有符合條件的賓客</p>
+          <p style="margin:.4rem 0 0">請調整搜尋文字或篩選條件。</p>
+        </div>
+        <div id="guestList" class="guest-list" aria-live="polite"></div>
+      </section>
+    </div>
+  </main>
+
+  <div id="toastRegion" class="toast-region" aria-live="polite"></div>
+</div>
+
+<script>
+// ================================================================
+// 設定：與 index.html 使用同一個 Apps Script 網址
+// ================================================================
+const GAS_URL = "https://script.google.com/macros/s/AKfycbw0kYdUfxqPb4YtmvjOrt1pMJqd43er8TDdXjdRhracaJbLdeD_eMd3EOJ7uWEwU7A/exec";
+// ================================================================
+
+const $ = id => document.getElementById(id);
+let pin = "";
+let guests = [];
+let loaded = false;
+let busyRows = new Set();
+let confirmDeleteRow = null;
+let pollTimer = null;
+
+function icons() { if (window.lucide) lucide.createIcons(); }
+
+// ── Toast ─────────────────────────────────────────────────────
+function showToast(msg, isError) {
+  const t = document.createElement("div");
+  t.className = "toast" + (isError ? " error" : "");
+  t.textContent = msg;
+  $("toastRegion").appendChild(t);
+  setTimeout(() => t.remove(), isError ? 7000 : 3200);
+}
+
+// ── API ───────────────────────────────────────────────────────
+async function apiGet(action) {
+  const res = await fetch(`${GAS_URL}?action=${action}&t=${Date.now()}`);
+  const text = await res.text();
+  let data;
+  try { data = JSON.parse(text); }
+  catch (e) { throw new Error("後端沒有回傳 JSON（請確認部署權限為「所有人」，且網址以 /exec 結尾）"); }
+  if (!data.ok) throw new Error(data.error || "後端回傳錯誤");
+  return data;
+}
+
+async function apiPost(payload) {
+  // 不加 Content-Type，維持「簡單請求」，避免 Apps Script 的 CORS 預檢問題
+  const res = await fetch(GAS_URL, { method: "POST", body: JSON.stringify({ ...payload, pin }) });
+  const text = await res.text();
+  let data;
+  try { data = JSON.parse(text); }
+  catch (e) { throw new Error("後端沒有回傳 JSON（請確認已重新部署最新版本的 Code.gs）"); }
+  if (!data.ok) {
+    const err = new Error(data.error || "操作失敗");
+    err.code = data.code;
+    throw err;
+  }
+  return data;
+}
+
+// ── 登入 ──────────────────────────────────────────────────────
+$("gateForm").addEventListener("submit", async e => {
+  e.preventDefault();
+  const input = $("pinInput").value;
+  const btn = $("gateBtn");
+  $("gateError").textContent = "";
+  btn.disabled = true; btn.textContent = "驗證中…";
+  pin = input;
+  try {
+    await apiPost({ action: "auth" });
+    try { sessionStorage.setItem("xmas_admin_pin", pin); } catch (_) {}
+    enterAdmin();
+  } catch (err) {
+    pin = "";
+    $("gateError").textContent = err.code === "BAD_PIN" ? "密碼錯誤，請再試一次。" : err.message;
+  }
+  btn.disabled = false; btn.textContent = "進入後台";
+});
+
+async function tryAutoLogin() {
+  let saved = "";
+  try { saved = sessionStorage.getItem("xmas_admin_pin") || ""; } catch (_) {}
+  if (!saved) return;
+  pin = saved;
+  try { await apiPost({ action: "auth" }); enterAdmin(); }
+  catch (_) { pin = ""; try { sessionStorage.removeItem("xmas_admin_pin"); } catch (__) {} }
+}
+
+function enterAdmin() {
+  $("gate").classList.add("hidden");
+  $("adminView").classList.remove("hidden");
+  $("logoutBtn").classList.remove("hidden");
+  icons();
+  loadGuests();
+  clearInterval(pollTimer);
+  pollTimer = setInterval(() => { if (!document.hidden) loadGuests(true); }, 20000);
+}
+
+$("logoutBtn").addEventListener("click", () => {
+  pin = ""; guests = []; loaded = false;
+  try { sessionStorage.removeItem("xmas_admin_pin"); } catch (_) {}
+  clearInterval(pollTimer);
+  $("adminView").classList.add("hidden");
+  $("logoutBtn").classList.add("hidden");
+  $("gate").classList.remove("hidden");
+  $("pinInput").value = "";
+});
+
+// ── 載入名單 ──────────────────────────────────────────────────
+async function loadGuests(silent) {
+  if (!silent) {
+    $("listLoading").classList.remove("hidden");
+    $("listError").classList.add("hidden");
+  }
+  try {
+    const data = await apiGet("getGuests");
+    guests = data.guests || [];
+    loaded = true;
+    $("listError").classList.add("hidden");
+    $("listLoading").classList.add("hidden");
+    renderAll();
+  } catch (err) {
+    if (silent && loaded) return; // 背景更新失敗就先沿用舊資料
+    $("listLoading").classList.add("hidden");
+    $("listError").classList.remove("hidden");
+    $("listErrorMsg").textContent = err.message;
+    $("guestList").innerHTML = "";
+    icons();
+  }
+}
+$("refreshBtn").addEventListener("click", () => { loadGuests(); showToast("已重新整理"); });
+$("retryBtn").addEventListener("click", () => loadGuests());
+
+// ── 渲染 ──────────────────────────────────────────────────────
+function renderAll() {
+  updateMetrics();
+  updateTableFilter();
+  renderList();
+}
+
+function updateMetrics() {
+  const total = guests.length;
+  const checked = guests.filter(g => g.checked).length;
+  const pct = total ? Math.round(checked / total * 100) : 0;
+  $("totalCount").textContent = total;
+  $("checkedCount").textContent = checked;
+  $("pendingCount").textContent = total - checked;
+  $("progressSummary").textContent = `${checked} / ${total}`;
+  $("progressPercent").textContent = pct + "%";
+  $("progressFill").style.width = pct + "%";
+}
+
+function updateTableFilter() {
+  const sel = $("tableFilter");
+  const cur = sel.value;
+  const tables = [...new Set(guests.map(g => g.table).filter(n => !isNaN(n)))].sort((a, b) => a - b);
+  sel.innerHTML = "";
+  const all = document.createElement("option"); all.value = "all"; all.textContent = "全部桌號"; sel.appendChild(all);
+  tables.forEach(n => { const o = document.createElement("option"); o.value = String(n); o.textContent = `第 ${n} 桌`; sel.appendChild(o); });
+  sel.value = [...sel.options].some(o => o.value === cur) ? cur : "all";
+}
+
+function filtered() {
+  const q = $("adminSearch").value.trim().toLowerCase();
+  const st = $("statusFilter").value;
+  const tb = $("tableFilter").value;
+  return guests.filter(g => {
+    if (st === "checked" && !g.checked) return false;
+    if (st === "pending" && g.checked) return false;
+    if (tb !== "all" && String(g.table) !== tb) return false;
+    if (!q) return true;
+    return [g.name, g.id, String(g.table), g.relation].some(v => String(v || "").toLowerCase().includes(q));
+  });
+}
+
+function renderList() {
+  const list = $("guestList");
+  const rows = filtered();
+  $("recordCount").textContent = `${rows.length} / ${guests.length}`;
+  $("listEmpty").classList.toggle("hidden", guests.length > 0);
+  $("filterEmpty").classList.toggle("hidden", !(guests.length > 0 && rows.length === 0));
+  list.innerHTML = "";
+  rows.forEach(g => list.appendChild(buildRow(g)));
+  icons();
+}
+
+function el(tag, cls, text) {
+  const e = document.createElement(tag);
+  if (cls) e.className = cls;
+  if (text !== undefined) e.textContent = text;
+  return e;
+}
+
+function buildRow(g) {
+  const row = el("article", "guest-row" + (busyRows.has(g.row) ? " is-busy" : ""));
+
+  const c1 = el("div");
+  c1.appendChild(el("p", "g-name", g.name));
+  c1.appendChild(el("p", "g-id", g.id ? "編號 " + g.id : "未設定編號"));
+
+  const c2 = el("div", "g-group", g.relation || "—");
+
+  const c3 = el("div");
+  c3.appendChild(el("span", "table-badge", isNaN(g.table) ? "—" : "桌 " + g.table));
+
+  const c4 = el("div");
+  const badge = el("span", "state-badge " + (g.checked ? "checked" : "pending"), g.checked ? "✓ 已報到" : "尚未報到");
+  c4.appendChild(badge);
+  if (g.checked && g.time) c4.appendChild(el("p", "g-time", g.time));
+
+  const c5 = el("div", "row-actions");
+  if (confirmDeleteRow === g.row) {
+    const box = el("div", "delete-confirm");
+    box.appendChild(el("span", "", "確定刪除？"));
+    const yes = el("button", "compact-button confirm", "刪除"); yes.type = "button";
+    yes.addEventListener("click", () => deleteGuest(g));
+    const no = el("button", "compact-button", "取消"); no.type = "button";
+    no.addEventListener("click", () => { confirmDeleteRow = null; renderList(); });
+    box.append(yes, no);
+    c5.appendChild(box);
+  } else {
+    const toggle = el("button", "compact-button", g.checked ? "取消報到" : "協助報到");
+    toggle.type = "button";
+    toggle.addEventListener("click", () => setChecked(g, !g.checked));
+    const del = el("button", "compact-button delete", "刪除"); del.type = "button";
+    del.addEventListener("click", () => { confirmDeleteRow = g.row; renderList(); });
+    c5.append(toggle, del);
+  }
+
+  row.append(c1, c2, c3, c4, c5);
+  return row;
+}
+
+["adminSearch", "statusFilter", "tableFilter"].forEach(id => {
+  $(id).addEventListener(id === "adminSearch" ? "input" : "change", renderList);
+});
+
+// ── 單筆操作 ──────────────────────────────────────────────────
+async function setChecked(g, checked) {
+  busyRows.add(g.row); renderList();
+  try {
+    await apiPost({ action: "setChecked", row: g.row, name: g.name, checked });
+    showToast(checked ? `${g.name} 已完成報到` : `已取消 ${g.name} 的報到`);
+  } catch (err) { handleError(err); }
+  busyRows.delete(g.row);
+  await loadGuests(true);
+}
+
+async function deleteGuest(g) {
+  busyRows.add(g.row); confirmDeleteRow = null; renderList();
+  try {
+    await apiPost({ action: "delete", row: g.row, name: g.name });
+    showToast(`已刪除 ${g.name}`);
+  } catch (err) { handleError(err); }
+  busyRows.clear();   // 刪除後列號會位移，一律清掉
+  await loadGuests(true);
+}
+
+function handleError(err) {
+  if (err.code === "BAD_PIN") {
+    showToast("密碼已失效，請重新登入", true);
+    $("logoutBtn").click();
+  } else showToast(err.message || "操作失敗", true);
+}
+
+// ── 新增 / 匯入 ───────────────────────────────────────────────
+function toggleImport(show) {
+  const panel = $("importPanel");
+  const open = show === undefined ? panel.classList.contains("hidden") : show;
+  panel.classList.toggle("hidden", !open);
+  $("toggleImport").setAttribute("aria-expanded", String(open));
+  if (open) { $("importData").focus(); panel.scrollIntoView({ behavior: "smooth", block: "nearest" }); }
+}
+$("toggleImport").addEventListener("click", () => toggleImport());
+$("closeImport").addEventListener("click", () => toggleImport(false));
+
+function parseImport(text) {
+  const valid = [], errors = [];
+  text.split(/\r?\n/).forEach((line, i) => {
+    if (!line.trim()) return;
+    const p = line.split(/[,\t，]/).map(s => s.trim());
+    const [name, id, table, relation] = [p[0] || "", p[1] || "", p[2] || "", p[3] || ""];
+    const n = Number(table);
+    if (!name) { errors.push(`第 ${i + 1} 行：缺少姓名`); return; }
+    if (!table || !Number.isInteger(n) || n < 1) { errors.push(`第 ${i + 1} 行（${name}）：桌號需為正整數`); return; }
+    valid.push({ name, id, table: n, relation });
+  });
+  return { valid, errors };
+}
+
+$("importForm").addEventListener("submit", async e => {
+  e.preventDefault();
+  const result = $("importResult");
+  result.textContent = "";
+  const { valid, errors } = parseImport($("importData").value);
+  if (!valid.length) {
+    result.innerHTML = "";
+    const m = el("div", "err", errors.length ? errors.join("；") : "請先貼上賓客資料");
+    result.appendChild(m);
+    return;
+  }
+  const btn = $("importSubmit");
+  btn.disabled = true;
+  result.textContent = `正在加入 ${valid.length} 位賓客…`;
+  try {
+    let added = 0; const skipped = [];
+    for (let i = 0; i < valid.length; i += 200) {
+      const data = await apiPost({ action: "import", rows: valid.slice(i, i + 200) });
+      added += data.added; skipped.push(...(data.skipped || []));
+    }
+    result.innerHTML = "";
+    result.appendChild(el("div", "", `✓ 已加入 ${added} 位賓客`));
+    const problems = [...errors, ...skipped.map(s => `${s.name || "（無姓名）"}：${s.reason}`)];
+    if (problems.length) result.appendChild(el("div", "err", `略過 ${problems.length} 筆：${problems.join("；")}`));
+    if (added) { $("importData").value = ""; showToast(`已加入 ${added} 位賓客`); await loadGuests(true); }
+  } catch (err) { result.textContent = ""; handleError(err); }
+  btn.disabled = false;
+});
+
+// ── 匯出 CSV ──────────────────────────────────────────────────
+$("exportBtn").addEventListener("click", () => {
+  if (!guests.length) { showToast("目前沒有資料可匯出", true); return; }
+  const esc = v => `"${String(v ?? "").replace(/"/g, '""')}"`;
+  const lines = [["姓名","編號","桌號","組別","已報到","報到時間"].map(esc).join(",")]
+    .concat(guests.map(g => [g.name, g.id, g.table, g.relation, g.checked ? "是" : "", g.time].map(esc).join(",")));
+  const blob = new Blob(["\ufeff" + lines.join("\r\n")], { type: "text/csv;charset=utf-8" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "聖誕趴賓客名單.csv";
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+});
+
+icons();
+tryAutoLogin();
+</script>
+</body>
+</html>
